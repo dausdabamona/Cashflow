@@ -288,7 +288,77 @@ function openQuickIncome() {
   }, 100);
 }
 
+/**
+ * Get status badge class
+ */
+function getStatusBadgeClass(status) {
+  return status === 'asset'
+    ? 'bg-green-100 text-green-800'
+    : 'bg-yellow-100 text-yellow-800';
+}
+
+/**
+ * Get progress message based on Kiyosaki status
+ */
+function getProgressMessage(status, progress) {
+  if (status === 'asset') {
+    return '🎉 Selamat! Passive income sudah melebihi passive expense!';
+  }
+  if (progress >= 75) {
+    return '💪 Hampir sampai! Terus tingkatkan passive income!';
+  }
+  if (progress >= 50) {
+    return '📈 Bagus! Separuh jalan menuju kebebasan finansial!';
+  }
+  if (progress >= 25) {
+    return '🌱 Awal yang baik! Terus bangun aset produktif!';
+  }
+  return '🚀 Mulai perjalanan finansialmu! Fokus kurangi liability.';
+}
+
+/**
+ * Get motivation message based on Kiyosaki status
+ */
+function getMotivationMessage(status) {
+  const assetMessages = [
+    'Kamu sudah menjadi ASSET! Terus pertahankan!',
+    'Passive income mengalir! Keep it up!',
+    'Kebebasan finansial sudah di depan mata!',
+    'Rich Dad akan bangga padamu!'
+  ];
+
+  const liabilityMessages = [
+    'Jangan menyerah! Kurangi liability, tambah asset!',
+    'Setiap langkah kecil mendekatkanmu ke kebebasan finansial!',
+    'Fokus ubah pengeluaran konsumtif jadi investasi!',
+    'Passive income adalah kunci! Mulai dari yang kecil!'
+  ];
+
+  const messages = status === 'asset' ? assetMessages : liabilityMessages;
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
+/**
+ * Navigate to a specific view
+ */
+function navigateTo(viewName) {
+  const navButtons = {
+    'home': 'navHome',
+    'dashboard': 'navHome',
+    'stats': 'navStats',
+    'history': 'navHistory',
+    'profile': 'navProfile'
+  };
+
+  const btnId = navButtons[viewName];
+  if (btnId) {
+    document.getElementById(btnId)?.click();
+  }
+}
+
 // Make functions available globally
 window.loadDashboard = loadDashboard;
 window.openQuickExpense = openQuickExpense;
 window.openQuickIncome = openQuickIncome;
+window.getMotivationMessage = getMotivationMessage;
+window.navigateTo = navigateTo;

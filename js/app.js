@@ -6,6 +6,11 @@ let currentView = 'dashboard';
 let accounts = [];
 let categories = [];
 
+// Transaction modal state
+let transactionType = 'expense';
+let selectedCategory = null;
+let selectedIncomeType = 'active';
+
 /**
  * Initialize the application
  */
@@ -13,14 +18,28 @@ async function initApp() {
   // Initialize Lucide icons
   lucide.createIcons();
 
-  // Check authentication
-  currentUser = await checkAuth();
-  if (!currentUser) return;
+  // Check authentication via window.db.auth.getUser()
+  try {
+    const { data: { user } } = await window.db.auth.getUser();
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
+    currentUser = user;
+    window.currentUser = user;
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    window.location.href = 'index.html';
+    return;
+  }
 
-  // Update user name in header
+  // Update user name in header with greeting
   const userNameEl = document.getElementById('userName');
   if (userNameEl) {
-    userNameEl.textContent = getUserDisplayName(currentUser);
+    const displayName = currentUser.user_metadata?.full_name ||
+                       currentUser.email?.split('@')[0] ||
+                       'User';
+    userNameEl.textContent = `Hai, ${displayName}!`;
   }
 
   // Load initial data
@@ -39,11 +58,13 @@ async function initApp() {
   await loadDashboard();
 
   // Listen for auth state changes
-  onAuthStateChange((event, session) => {
+  window.db.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
       window.location.href = 'index.html';
     }
   });
+
+  console.log('✅ App initialized successfully');
 }
 
 /**
@@ -52,22 +73,10 @@ async function initApp() {
 async function loadInitialData() {
   try {
     // Load accounts
-    const { data: accountsData, error: accountsError } = await window.db
-      .from('accounts')
-      .select('*')
-      .order('name');
-
-    if (accountsError) throw accountsError;
-    accounts = accountsData || [];
+    await loadAccounts();
 
     // Load categories
-    const { data: categoriesData, error: categoriesError } = await window.db
-      .from('categories')
-      .select('*')
-      .order('type, name');
-
-    if (categoriesError) throw categoriesError;
-    categories = categoriesData || [];
+    await loadCategories();
 
     // Populate account dropdowns
     populateAccountDropdowns();
@@ -79,6 +88,54 @@ async function loadInitialData() {
 }
 
 /**
+ * Load accounts from database and populate dropdown
+ */
+async function loadAccounts() {
+  try {
+    const { data, error } = await window.db
+      .from('accounts')
+      .select('*')
+      .order('name');
+
+    if (error) throw error;
+    accounts = data || [];
+    window.accounts = accounts;
+    return accounts;
+  } catch (error) {
+    console.error('Load accounts error:', error);
+    return [];
+  }
+}
+
+/**
+ * Load categories by type from database and populate dropdown
+ * @param {string} type - 'income' or 'expense' (optional, loads all if not specified)
+ */
+async function loadCategories(type = null) {
+  try {
+    let query = window.db.from('categories').select('*');
+
+    if (type) {
+      query = query.eq('type', type);
+    }
+
+    const { data, error } = await query.order('name');
+
+    if (error) throw error;
+
+    if (!type) {
+      categories = data || [];
+      window.categories = categories;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Load categories error:', error);
+    return [];
+  }
+}
+
+/**
  * Populate account dropdowns
  */
 function populateAccountDropdowns() {
@@ -86,10 +143,12 @@ function populateAccountDropdowns() {
 
   dropdowns.forEach(id => {
     const select = document.getElementById(id);
-    if (select) {
+    if (select && accounts.length > 0) {
       select.innerHTML = accounts.map(acc =>
         `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.balance || 0)})</option>`
       ).join('');
+    } else if (select) {
+      select.innerHTML = '<option value="">Belum ada akun</option>';
     }
   });
 }
@@ -104,7 +163,7 @@ function setupNavigation() {
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const view = item.dataset.view;
-      navigateTo(view);
+      showView(view);
 
       // Update active state
       navItems.forEach(nav => nav.classList.remove('active'));
@@ -112,10 +171,10 @@ function setupNavigation() {
     });
   });
 
-  // Settings button in header
+  // Settings button in header (⚙️)
   if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
-      navigateTo('settings');
+      showView('settings');
       navItems.forEach(nav => {
         nav.classList.toggle('active', nav.dataset.view === 'settings');
       });
@@ -124,11 +183,11 @@ function setupNavigation() {
 }
 
 /**
- * Navigate to a view
- * @param {string} view - View name
+ * Show a view by name - renders view to #mainContent
+ * @param {string} name - View name (dashboard/stats/history/settings)
  */
-async function navigateTo(view) {
-  currentView = view;
+async function showView(name) {
+  currentView = name;
 
   // Hide all views
   const views = ['dashboard', 'stats', 'history', 'settings', 'report'];
@@ -138,26 +197,26 @@ async function navigateTo(view) {
   });
 
   // Show selected view
-  const viewEl = document.getElementById(`${view}View`);
+  const viewEl = document.getElementById(`${name}View`);
   if (viewEl) {
     viewEl.classList.remove('hidden');
 
     // Load view content
-    switch (view) {
+    switch (name) {
       case 'dashboard':
-        await loadDashboard();
+        if (typeof loadDashboard === 'function') await loadDashboard();
         break;
       case 'stats':
-        await loadStats();
+        if (typeof loadStats === 'function') await loadStats();
         break;
       case 'history':
-        await loadHistory();
+        if (typeof loadHistory === 'function') await loadHistory();
         break;
       case 'settings':
-        await loadSettings();
+        if (typeof loadSettings === 'function') await loadSettings();
         break;
       case 'report':
-        await loadReport();
+        if (typeof loadReport === 'function') await loadReport();
         break;
     }
   }
@@ -166,13 +225,139 @@ async function navigateTo(view) {
   lucide.createIcons();
 }
 
+// Alias for backward compatibility
+const navigateTo = showView;
+
+/**
+ * Show a modal by ID
+ * @param {string} id - Modal element ID
+ */
+function showModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.remove('hidden');
+    lucide.createIcons();
+  }
+}
+
+/**
+ * Hide a modal by ID
+ * @param {string} id - Modal element ID
+ */
+function hideModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+/**
+ * Show toast notification - appears for 3 seconds then disappears
+ * @param {string} message - Message to display
+ * @param {string} type - Type: 'success', 'error', 'warning', 'info'
+ */
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+
+  const colors = {
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+    warning: 'bg-yellow-500',
+    info: 'bg-blue-500'
+  };
+
+  const icons = {
+    success: 'check-circle',
+    error: 'x-circle',
+    warning: 'alert-triangle',
+    info: 'info'
+  };
+
+  toast.className = `fixed bottom-20 left-4 right-4 ${colors[type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 transform transition-all duration-300`;
+  toast.innerHTML = `
+    <i data-lucide="${icons[type]}" class="w-5 h-5"></i>
+    <span>${message}</span>
+  `;
+  toast.classList.remove('translate-y-full', 'opacity-0');
+
+  // Re-initialize Lucide icons
+  lucide.createIcons();
+
+  // Hide after 3 seconds
+  setTimeout(() => {
+    toast.classList.add('translate-y-full', 'opacity-0');
+  }, 3000);
+}
+
+/**
+ * Show loading overlay
+ */
+function showLoading() {
+  const loading = document.getElementById('loading');
+  if (loading) {
+    loading.classList.remove('hidden');
+  }
+}
+
+/**
+ * Hide loading overlay
+ */
+function hideLoading() {
+  const loading = document.getElementById('loading');
+  if (loading) {
+    loading.classList.add('hidden');
+  }
+}
+
+/**
+ * Show confirmation dialog
+ * @param {string} message - Confirmation message
+ * @returns {Promise<boolean>} User's choice
+ */
+async function showConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirmModal');
+    const messageEl = document.getElementById('confirmMessage');
+    const yesBtn = document.getElementById('confirmYes');
+    const noBtn = document.getElementById('confirmNo');
+
+    if (!modal || !messageEl) {
+      resolve(confirm(message));
+      return;
+    }
+
+    messageEl.textContent = message;
+    modal.classList.remove('hidden');
+
+    const handleYes = () => {
+      modal.classList.add('hidden');
+      cleanup();
+      resolve(true);
+    };
+
+    const handleNo = () => {
+      modal.classList.add('hidden');
+      cleanup();
+      resolve(false);
+    };
+
+    const cleanup = () => {
+      yesBtn.removeEventListener('click', handleYes);
+      noBtn.removeEventListener('click', handleNo);
+    };
+
+    yesBtn.addEventListener('click', handleYes);
+    noBtn.addEventListener('click', handleNo);
+  });
+}
+
 /**
  * Setup transaction modal
  */
 function setupTransactionModal() {
   const fabBtn = document.getElementById('fabBtn');
   const overlay = document.getElementById('transactionOverlay');
-  const sheet = document.getElementById('transactionSheet');
   const expenseTab = document.getElementById('expenseTab');
   const incomeTab = document.getElementById('incomeTab');
   const amountInput = document.getElementById('transactionAmount');
@@ -181,14 +366,10 @@ function setupTransactionModal() {
   const incomeTypeSection = document.getElementById('incomeTypeSection');
   const incomeTypeBtns = document.querySelectorAll('.income-type-btn');
 
-  let isExpense = true;
-  let selectedCategory = null;
-  let selectedIncomeType = 'active';
-
-  // Open modal
+  // Open modal on FAB click
   if (fabBtn) {
     fabBtn.addEventListener('click', () => {
-      openTransactionModal();
+      openTransactionModal('expense');
     });
   }
 
@@ -197,10 +378,10 @@ function setupTransactionModal() {
     overlay.addEventListener('click', closeTransactionModal);
   }
 
-  // Tab switching
+  // Tab switching - Expense
   if (expenseTab) {
     expenseTab.addEventListener('click', () => {
-      isExpense = true;
+      transactionType = 'expense';
       expenseTab.className = 'flex-1 py-2 px-4 rounded-lg bg-red-100 text-red-700 font-medium transition-all';
       incomeTab.className = 'flex-1 py-2 px-4 rounded-lg bg-gray-100 text-gray-600 font-medium transition-all';
       incomeTypeSection?.classList.add('hidden');
@@ -208,9 +389,10 @@ function setupTransactionModal() {
     });
   }
 
+  // Tab switching - Income
   if (incomeTab) {
     incomeTab.addEventListener('click', () => {
-      isExpense = false;
+      transactionType = 'income';
       incomeTab.className = 'flex-1 py-2 px-4 rounded-lg bg-green-100 text-green-700 font-medium transition-all';
       expenseTab.className = 'flex-1 py-2 px-4 rounded-lg bg-gray-100 text-gray-600 font-medium transition-all';
       incomeTypeSection?.classList.remove('hidden');
@@ -218,7 +400,7 @@ function setupTransactionModal() {
     });
   }
 
-  // Income type selection
+  // Income type selection (active/passive/portfolio)
   incomeTypeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       selectedIncomeType = btn.dataset.type;
@@ -230,7 +412,7 @@ function setupTransactionModal() {
     });
   });
 
-  // Format amount input
+  // Format amount input (auto format to Indonesian number)
   if (amountInput) {
     amountInput.addEventListener('input', (e) => {
       let value = e.target.value.replace(/\D/g, '');
@@ -240,52 +422,14 @@ function setupTransactionModal() {
     });
   }
 
-  // Set default date
+  // Set default date to today
   if (dateInput) {
     dateInput.value = getToday();
   }
 
   // Submit transaction
   if (submitBtn) {
-    submitBtn.addEventListener('click', async () => {
-      const amount = parseInt(amountInput.value.replace(/\D/g, '')) || 0;
-      const accountId = document.getElementById('transactionAccount').value;
-      const date = dateInput.value;
-      const description = document.getElementById('transactionDescription').value;
-
-      if (!amount) {
-        showToast('Masukkan jumlah', 'error');
-        return;
-      }
-
-      if (!selectedCategory) {
-        showToast('Pilih kategori', 'error');
-        return;
-      }
-
-      try {
-        showLoading();
-
-        if (isExpense) {
-          await recordExpense(amount, accountId, selectedCategory, date, description);
-        } else {
-          await recordIncome(amount, accountId, selectedCategory, date, description, selectedIncomeType);
-        }
-
-        hideLoading();
-        showToast(isExpense ? 'Pengeluaran tersimpan!' : 'Pemasukan tersimpan!', 'success');
-        closeTransactionModal();
-
-        // Refresh data
-        await loadInitialData();
-        await loadDashboard();
-
-      } catch (error) {
-        hideLoading();
-        console.error('Transaction error:', error);
-        showToast('Gagal menyimpan transaksi', 'error');
-      }
-    });
+    submitBtn.addEventListener('click', handleSubmitTransaction);
   }
 
   // Category selection handler (delegated)
@@ -298,39 +442,202 @@ function setupTransactionModal() {
       });
     }
   });
+}
 
-  /**
-   * Open transaction modal
-   */
-  function openTransactionModal() {
-    overlay.classList.add('active');
-    sheet.classList.add('active');
-    amountInput.value = '';
-    dateInput.value = getToday();
-    document.getElementById('transactionDescription').value = '';
-    selectedCategory = null;
-    loadCategoryChips('expense');
-    lucide.createIcons();
+/**
+ * Open transaction modal with specific type
+ * @param {string} type - 'expense', 'income', or 'transfer'
+ */
+function openTransactionModal(type = 'expense') {
+  transactionType = type;
+
+  // If transfer, open transfer modal instead
+  if (type === 'transfer') {
+    openTransferModal();
+    return;
   }
 
-  /**
-   * Load category chips
-   */
-  function loadCategoryChips(type) {
-    const container = document.getElementById('categoryList');
-    const filtered = categories.filter(c => c.type === type);
+  const overlay = document.getElementById('transactionOverlay');
+  const sheet = document.getElementById('transactionSheet');
+  const amountInput = document.getElementById('transactionAmount');
+  const dateInput = document.getElementById('transactionDate');
+  const expenseTab = document.getElementById('expenseTab');
+  const incomeTab = document.getElementById('incomeTab');
 
-    container.innerHTML = filtered.map(cat => `
-      <button class="category-chip" data-id="${cat.id}">
-        <span>${cat.icon || '📁'}</span>
-        <span>${cat.name}</span>
-      </button>
-    `).join('');
+  overlay?.classList.add('active');
+  sheet?.classList.add('active');
 
-    if (filtered.length === 0) {
-      container.innerHTML = '<p class="text-gray-500 text-sm">Belum ada kategori</p>';
+  // Reset form
+  if (amountInput) amountInput.value = '';
+  if (dateInput) dateInput.value = getToday();
+  const descInput = document.getElementById('transactionDescription');
+  if (descInput) descInput.value = '';
+  selectedCategory = null;
+
+  // Set tab state based on type
+  if (type === 'income') {
+    incomeTab?.click();
+  } else {
+    expenseTab?.click();
+  }
+
+  lucide.createIcons();
+}
+
+/**
+ * Handle transaction form submission
+ */
+async function handleSubmitTransaction() {
+  const amountInput = document.getElementById('transactionAmount');
+  const dateInput = document.getElementById('transactionDate');
+  const descInput = document.getElementById('transactionDescription');
+  const accountSelect = document.getElementById('transactionAccount');
+
+  const amount = parseInt(amountInput?.value.replace(/\D/g, '')) || 0;
+  const accountId = accountSelect?.value;
+  const date = dateInput?.value;
+  const description = descInput?.value || '';
+
+  // Validation
+  if (!amount || amount <= 0) {
+    showToast('Masukkan jumlah yang valid', 'error');
+    return;
+  }
+
+  if (!selectedCategory) {
+    showToast('Pilih kategori', 'error');
+    return;
+  }
+
+  if (!accountId) {
+    showToast('Pilih akun', 'error');
+    return;
+  }
+
+  if (!date) {
+    showToast('Pilih tanggal', 'error');
+    return;
+  }
+
+  try {
+    showLoading();
+
+    if (transactionType === 'expense') {
+      await submitExpense(amount, accountId, selectedCategory, date, description);
+      showToast('Pengeluaran tersimpan!', 'success');
+    } else {
+      await submitIncome(amount, accountId, selectedCategory, date, description, selectedIncomeType);
+      showToast('Pemasukan tersimpan!', 'success');
     }
+
+    hideLoading();
+    closeTransactionModal();
+
+    // Refresh data and dashboard
+    await onSuccess();
+
+  } catch (error) {
+    hideLoading();
+    console.error('Transaction error:', error);
+    showToast(error.message || 'Gagal menyimpan transaksi', 'error');
   }
+}
+
+/**
+ * Submit expense - calls window.db.rpc('record_expense', {...})
+ */
+async function submitExpense(amount, accountId, categoryId, date, description) {
+  const userId = currentUser?.id;
+  if (!userId) throw new Error('User tidak terautentikasi');
+
+  const { data, error } = await window.db.rpc('record_expense', {
+    p_user_id: userId,
+    p_amount: amount,
+    p_account_id: accountId,
+    p_category_id: categoryId,
+    p_date: date,
+    p_description: description || null,
+    p_item_id: null
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Submit income - calls window.db.rpc('record_income', {...})
+ */
+async function submitIncome(amount, accountId, categoryId, date, description, incomeType = 'active') {
+  const userId = currentUser?.id;
+  if (!userId) throw new Error('User tidak terautentikasi');
+
+  const { data, error } = await window.db.rpc('record_income', {
+    p_user_id: userId,
+    p_amount: amount,
+    p_account_id: accountId,
+    p_category_id: categoryId,
+    p_date: date,
+    p_description: description || null,
+    p_income_type: incomeType,
+    p_item_id: null
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Submit transfer - calls window.db.rpc('transfer_funds', {...})
+ */
+async function submitTransfer(fromAccountId, toAccountId, amount, description) {
+  const userId = currentUser?.id;
+  if (!userId) throw new Error('User tidak terautentikasi');
+
+  const { data, error } = await window.db.rpc('transfer_funds', {
+    p_user_id: userId,
+    p_from_account_id: fromAccountId,
+    p_to_account_id: toAccountId,
+    p_amount: amount,
+    p_date: getToday(),
+    p_description: description || null
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Called after successful transaction - closes modal, shows toast, reloads dashboard
+ */
+async function onSuccess() {
+  await loadInitialData();
+  await loadDashboard();
+}
+
+/**
+ * Load category chips for transaction modal
+ * @param {string} type - 'income' or 'expense'
+ */
+function loadCategoryChips(type) {
+  const container = document.getElementById('categoryList');
+  if (!container) return;
+
+  const filtered = categories.filter(c => c.type === type);
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-sm">Belum ada kategori. Tambah di Pengaturan.</p>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(cat => `
+    <button class="category-chip" data-id="${cat.id}">
+      <span>${cat.icon || '📁'}</span>
+      <span>${cat.name}</span>
+    </button>
+  `).join('');
+
+  // Reset selection
+  selectedCategory = null;
 }
 
 /**
@@ -345,7 +652,6 @@ function closeTransactionModal() {
  * Setup transfer modal
  */
 function setupTransferModal() {
-  const modal = document.getElementById('transferModal');
   const closeBtn = document.getElementById('closeTransferModal');
   const form = document.getElementById('transferForm');
   const amountInput = document.getElementById('transferAmount');
@@ -353,7 +659,7 @@ function setupTransferModal() {
   // Close modal
   if (closeBtn) {
     closeBtn.addEventListener('click', () => {
-      modal.classList.add('hidden');
+      hideModal('transferModal');
     });
   }
 
@@ -369,42 +675,48 @@ function setupTransferModal() {
 
   // Submit transfer
   if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    form.addEventListener('submit', handleSubmitTransfer);
+  }
+}
 
-      const fromAccountId = document.getElementById('transferFrom').value;
-      const toAccountId = document.getElementById('transferTo').value;
-      const amount = parseInt(amountInput.value.replace(/\D/g, '')) || 0;
-      const description = document.getElementById('transferDescription').value;
+/**
+ * Handle transfer form submission
+ */
+async function handleSubmitTransfer(e) {
+  e.preventDefault();
 
-      if (fromAccountId === toAccountId) {
-        showToast('Pilih akun yang berbeda', 'error');
-        return;
-      }
+  const fromAccountId = document.getElementById('transferFrom')?.value;
+  const toAccountId = document.getElementById('transferTo')?.value;
+  const amountInput = document.getElementById('transferAmount');
+  const amount = parseInt(amountInput?.value.replace(/\D/g, '')) || 0;
+  const description = document.getElementById('transferDescription')?.value || '';
 
-      if (!amount) {
-        showToast('Masukkan jumlah', 'error');
-        return;
-      }
+  // Validation
+  if (fromAccountId === toAccountId) {
+    showToast('Pilih akun yang berbeda', 'error');
+    return;
+  }
 
-      try {
-        showLoading();
-        await transferFunds(fromAccountId, toAccountId, amount, description);
-        hideLoading();
+  if (!amount || amount <= 0) {
+    showToast('Masukkan jumlah yang valid', 'error');
+    return;
+  }
 
-        showToast('Transfer berhasil!', 'success');
-        modal.classList.add('hidden');
+  try {
+    showLoading();
+    await submitTransfer(fromAccountId, toAccountId, amount, description);
+    hideLoading();
 
-        // Refresh data
-        await loadInitialData();
-        await loadDashboard();
+    showToast('Transfer berhasil!', 'success');
+    hideModal('transferModal');
 
-      } catch (error) {
-        hideLoading();
-        console.error('Transfer error:', error);
-        showToast('Transfer gagal', 'error');
-      }
-    });
+    // Refresh data
+    await onSuccess();
+
+  } catch (error) {
+    hideLoading();
+    console.error('Transfer error:', error);
+    showToast(error.message || 'Transfer gagal', 'error');
   }
 }
 
@@ -412,18 +724,43 @@ function setupTransferModal() {
  * Open transfer modal
  */
 function openTransferModal() {
-  const modal = document.getElementById('transferModal');
-  document.getElementById('transferAmount').value = '';
-  document.getElementById('transferDescription').value = '';
+  const amountInput = document.getElementById('transferAmount');
+  const descInput = document.getElementById('transferDescription');
+
+  if (amountInput) amountInput.value = '';
+  if (descInput) descInput.value = '';
+
   populateAccountDropdowns();
-  modal?.classList.remove('hidden');
-  lucide.createIcons();
+  showModal('transferModal');
+}
+
+/**
+ * Get today's date in YYYY-MM-DD format
+ */
+function getToday() {
+  return new Date().toISOString().split('T')[0];
 }
 
 // Make functions available globally
 window.initApp = initApp;
-window.navigateTo = navigateTo;
-window.openTransferModal = openTransferModal;
+window.currentUser = currentUser;
 window.accounts = accounts;
 window.categories = categories;
-window.currentUser = currentUser;
+window.showView = showView;
+window.navigateTo = navigateTo;
+window.showModal = showModal;
+window.hideModal = hideModal;
+window.showToast = showToast;
+window.showLoading = showLoading;
+window.hideLoading = hideLoading;
+window.showConfirm = showConfirm;
+window.openTransactionModal = openTransactionModal;
+window.closeTransactionModal = closeTransactionModal;
+window.openTransferModal = openTransferModal;
+window.loadAccounts = loadAccounts;
+window.loadCategories = loadCategories;
+window.submitExpense = submitExpense;
+window.submitIncome = submitIncome;
+window.submitTransfer = submitTransfer;
+window.onSuccess = onSuccess;
+window.getToday = getToday;
