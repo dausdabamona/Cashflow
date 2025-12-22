@@ -556,7 +556,7 @@ async function saveAccount(event) {
       // Update
       const { error } = await window.db
         .from('accounts')
-        .update({ name, type, current_balance: balance, icon, updated_at: new Date().toISOString() })
+        .update({ name, type, current_balance: balance, icon })
         .eq('id', id);
       if (error) throw error;
     } else {
@@ -568,8 +568,7 @@ async function saveAccount(event) {
           name,
           type,
           current_balance: balance,
-          icon,
-          created_at: new Date().toISOString()
+          icon
         });
       if (error) throw error;
     }
@@ -993,7 +992,7 @@ async function saveCategory(event) {
     if (id) {
       const { error } = await window.db
         .from('categories')
-        .update({ name, icon, updated_at: new Date().toISOString() })
+        .update({ name, icon })
         .eq('id', id);
       if (error) throw error;
     } else {
