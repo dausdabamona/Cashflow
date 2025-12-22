@@ -338,27 +338,8 @@ function getMotivationMessage(status) {
   return messages[Math.floor(Math.random() * messages.length)];
 }
 
-/**
- * Navigate to a specific view
- */
-function navigateTo(viewName) {
-  const navButtons = {
-    'home': 'navHome',
-    'dashboard': 'navHome',
-    'stats': 'navStats',
-    'history': 'navHistory',
-    'profile': 'navProfile'
-  };
-
-  const btnId = navButtons[viewName];
-  if (btnId) {
-    document.getElementById(btnId)?.click();
-  }
-}
-
 // Make functions available globally
 window.loadDashboard = loadDashboard;
 window.openQuickExpense = openQuickExpense;
 window.openQuickIncome = openQuickIncome;
 window.getMotivationMessage = getMotivationMessage;
-window.navigateTo = navigateTo;
