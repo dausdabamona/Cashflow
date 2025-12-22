@@ -1,4 +1,4 @@
-// Kiyosaki Finance Tracker - Report Module
+// Cashflow Tracker - Report Module
 
 let currentReportMonth = new Date();
 
@@ -190,7 +190,7 @@ function renderReport(data) {
         </div>
         <div class="p-3 bg-gray-50 rounded-lg">
           <div class="flex items-center justify-between">
-            <span class="text-gray-600">Kiyosaki</span>
+            <span class="text-gray-600">Cashflow</span>
             <span class="font-medium ${passiveIncome >= passiveExpense ? 'text-green-600' : 'text-red-600'}">
               ${passiveIncome >= passiveExpense ? 'ASSET' : 'LIABILITY'}
             </span>
@@ -246,11 +246,11 @@ function renderReport(data) {
       </div>
     </div>
 
-    <!-- 4. KIYOSAKI ANALYSIS -->
+    <!-- 4. CASHFLOW ANALYSIS -->
     <div class="card mb-4 ${passiveIncome >= passiveExpense ? 'status-asset' : 'status-liability'}">
       <h3 class="font-semibold mb-4 flex items-center gap-2">
         <span class="text-xl">📊</span>
-        Analisis Kiyosaki
+        Analisis Cashflow
       </h3>
 
       <div class="mb-4">

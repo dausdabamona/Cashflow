@@ -1,4 +1,4 @@
-// Kiyosaki Finance Tracker - Authentication Module
+// Cashflow Tracker - Authentication Module
 
 /**
  * Check if Supabase is ready

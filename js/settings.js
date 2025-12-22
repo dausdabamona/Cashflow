@@ -1,4 +1,4 @@
-// Kiyosaki Finance Tracker - Settings Module
+// Cashflow Tracker - Settings Module
 
 /**
  * Load settings view
@@ -140,7 +140,7 @@ function renderSettings(profile) {
 
     <!-- App Info -->
     <div class="text-center mt-6 text-sm text-gray-400">
-      <p>Kiyosaki Tracker v1.0.0</p>
+      <p>Cashflow Tracker v1.0.0</p>
       <p class="mt-1">Made with ❤️ for Financial Freedom</p>
     </div>
   `;
@@ -1312,7 +1312,7 @@ function showAddItemCashModal() {
 
             <!-- Non-consumable Classification (shown when NOT consumable) -->
             <div id="itemCashClassificationSection">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Klasifikasi Kiyosaki</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Klasifikasi Cashflow</label>
               <div class="grid grid-cols-3 gap-2">
                 <label class="relative">
                   <input type="radio" name="itemCashClassification" value="asset" class="peer sr-only" checked>

@@ -1,4 +1,4 @@
-// Kiyosaki Finance Tracker - Transaction Module
+// Cashflow Tracker - Transaction Module
 
 /**
  * Record an expense

@@ -1,4 +1,4 @@
-// Kiyosaki Finance Tracker - Utility Functions
+// Cashflow Tracker - Utility Functions
 
 /**
  * Format number to Indonesian Rupiah
@@ -103,7 +103,7 @@ function getMonthEnd() {
 }
 
 /**
- * Get CSS class based on Kiyosaki status
+ * Get CSS class based on Cashflow status
  * @param {string} status - 'asset', 'liability', or 'neutral'
  * @returns {string} Tailwind CSS classes
  */
@@ -167,7 +167,7 @@ function getProgressColor(percentage) {
 }
 
 /**
- * Get motivational message based on Kiyosaki status
+ * Get motivational message based on Cashflow status
  * @param {string} status - Current financial status
  * @param {number} progress - Progress percentage
  * @returns {string} Motivational message

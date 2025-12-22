@@ -1,7 +1,7 @@
 {
-  "name": "Kiyosaki Finance Tracker",
-  "short_name": "Kiyosaki",
-  "description": "Track your finances using Robert Kiyosaki's Rich Dad Poor Dad concepts",
+  "name": "Cashflow Tracker",
+  "short_name": "Cashflow",
+  "description": "Track your finances - Ubah Liability jadi Asset",
   "start_url": "/app.html",
   "display": "standalone",
   "background_color": "#F9FAFB",

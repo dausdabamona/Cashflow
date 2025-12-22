@@ -1,4 +1,4 @@
-// Kiyosaki Finance Tracker - Dashboard Module
+// Cashflow Tracker - Dashboard Module
 
 /**
  * Load dashboard view - using direct queries instead of RPC
@@ -132,29 +132,29 @@ function renderDashboard(summary, transactions) {
   const passiveExpense = data.passive_expense || 0;
   const healthScore = data.health_score || 50;
 
-  // Determine Kiyosaki status
+  // Determine Cashflow status
   const netCashflow = passiveIncome - passiveExpense;
-  const kiyosakiStatus = netCashflow >= 0 ? 'asset' : 'liability';
+  const cashflowStatus = netCashflow >= 0 ? 'asset' : 'liability';
   const progressToAsset = passiveExpense > 0
     ? Math.min(100, Math.round((passiveIncome / passiveExpense) * 100))
     : (passiveIncome > 0 ? 100 : 50);
 
   return `
-    <!-- Kiyosaki Status Card -->
-    <div class="card mb-4 ${kiyosakiStatus === 'asset' ? 'status-asset' : 'status-liability'}">
+    <!-- Cashflow Status Card -->
+    <div class="card mb-4 ${cashflowStatus === 'asset' ? 'status-asset' : 'status-liability'}">
       <div class="flex items-center justify-between mb-3">
-        <span class="text-sm font-medium uppercase tracking-wide">Status Kiyosaki</span>
-        <span class="px-2 py-1 rounded-full text-xs font-bold ${getStatusBadgeClass(kiyosakiStatus)}">
-          ${kiyosakiStatus === 'asset' ? 'ASSET' : 'LIABILITY'}
+        <span class="text-sm font-medium uppercase tracking-wide">Status Cashflow</span>
+        <span class="px-2 py-1 rounded-full text-xs font-bold ${getStatusBadgeClass(cashflowStatus)}">
+          ${cashflowStatus === 'asset' ? 'ASSET' : 'LIABILITY'}
         </span>
       </div>
 
       <div class="mb-3">
         <div class="progress-bar">
-          <div class="progress-fill ${kiyosakiStatus === 'asset' ? 'progress-fill-green' : 'progress-fill-yellow'} progress-animated"
+          <div class="progress-fill ${cashflowStatus === 'asset' ? 'progress-fill-green' : 'progress-fill-yellow'} progress-animated"
                style="width: ${progressToAsset}%"></div>
         </div>
-        <p class="text-sm mt-2 opacity-80">${getProgressMessage(kiyosakiStatus, progressToAsset)}</p>
+        <p class="text-sm mt-2 opacity-80">${getProgressMessage(cashflowStatus, progressToAsset)}</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4 pt-3 border-t border-current border-opacity-20">
@@ -378,7 +378,7 @@ function getStatusBadgeClass(status) {
 }
 
 /**
- * Get progress message based on Kiyosaki status
+ * Get progress message based on Cashflow status
  */
 function getProgressMessage(status, progress) {
   if (status === 'asset') {
@@ -397,7 +397,7 @@ function getProgressMessage(status, progress) {
 }
 
 /**
- * Get motivation message based on Kiyosaki status
+ * Get motivation message based on Cashflow status
  */
 function getMotivationMessage(status) {
   const assetMessages = [

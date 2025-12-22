@@ -1,4 +1,4 @@
-// Kiyosaki Finance Tracker - Main App Controller
+// Cashflow Tracker - Main App Controller
 
 // Global state
 let currentUser = null;

@@ -1,4 +1,4 @@
-// Kiyosaki Finance Tracker - Supabase Configuration
+// Cashflow Tracker - Supabase Configuration
 // GANTI dengan credentials dari Supabase Dashboard
 // Settings > API > Project URL & anon key
 

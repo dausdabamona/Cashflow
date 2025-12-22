@@ -1,7 +1,7 @@
-// Kiyosaki Finance Tracker - Gamification Module
+// Cashflow Tracker - Gamification Module
 
-const STREAK_KEY = 'kiyosaki_streak';
-const LAST_ACTIVITY_KEY = 'kiyosaki_last_activity';
+const STREAK_KEY = 'cashflow_streak';
+const LAST_ACTIVITY_KEY = 'cashflow_last_activity';
 
 /**
  * Get current streak

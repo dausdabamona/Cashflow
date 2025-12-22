@@ -1,7 +1,7 @@
-// Kiyosaki Finance Tracker - Service Worker
-const CACHE_NAME = 'kiyosaki-tracker-v6';
-const STATIC_CACHE = 'kiyosaki-static-v6';
-const DYNAMIC_CACHE = 'kiyosaki-dynamic-v6';
+// Cashflow Tracker - Service Worker
+const CACHE_NAME = 'cashflow-tracker-v7';
+const STATIC_CACHE = 'cashflow-static-v7';
+const DYNAMIC_CACHE = 'cashflow-dynamic-v7';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -167,7 +167,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Kiyosaki Tracker', options)
+    self.registration.showNotification(data.title || 'Cashflow Tracker', options)
   );
 });
 
@@ -234,7 +234,7 @@ async function syncOfflineTransactions() {
 // Simple IndexedDB helper
 function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('kiyosaki-offline', 1);
+    const request = indexedDB.open('cashflow-offline', 1);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
     request.onupgradeneeded = (event) => {
