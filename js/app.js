@@ -11,6 +11,43 @@ let transactionType = 'expense';
 let selectedCategory = null;
 let selectedIncomeType = 'active';
 
+// Default categories configuration
+const DEFAULT_EXPENSE_CATEGORIES = [
+  { name: 'Makanan & Minuman', icon: '🍔', type: 'expense' },
+  { name: 'Transportasi', icon: '🚗', type: 'expense' },
+  { name: 'Rumah & Utilitas', icon: '🏠', type: 'expense' },
+  { name: 'Belanja', icon: '🛒', type: 'expense' },
+  { name: 'Kesehatan', icon: '💊', type: 'expense' },
+  { name: 'Pendidikan', icon: '🎓', type: 'expense' },
+  { name: 'Hiburan', icon: '🎮', type: 'expense' },
+  { name: 'Pakaian', icon: '👔', type: 'expense' },
+  { name: 'Cicilan/Hutang', icon: '💳', type: 'expense' },
+  { name: 'Komunikasi', icon: '📱', type: 'expense' },
+  { name: 'Perawatan Diri', icon: '💇', type: 'expense' },
+  { name: 'Hadiah/Donasi', icon: '🎁', type: 'expense' },
+  { name: 'Liburan', icon: '✈️', type: 'expense' },
+  { name: 'Lainnya', icon: '📦', type: 'expense' }
+];
+
+const DEFAULT_INCOME_CATEGORIES = [
+  { name: 'Gaji', icon: '💼', type: 'income', income_type: 'active' },
+  { name: 'Bonus', icon: '💰', type: 'income', income_type: 'active' },
+  { name: 'Bisnis', icon: '🏪', type: 'income', income_type: 'active' },
+  { name: 'Freelance', icon: '💵', type: 'income', income_type: 'active' },
+  { name: 'Sewa Property', icon: '🏠', type: 'income', income_type: 'passive' },
+  { name: 'Dividen Saham', icon: '💹', type: 'income', income_type: 'portfolio' },
+  { name: 'Capital Gain', icon: '📈', type: 'income', income_type: 'portfolio' },
+  { name: 'Bunga Bank', icon: '🏦', type: 'income', income_type: 'passive' },
+  { name: 'Royalti', icon: '📚', type: 'income', income_type: 'passive' },
+  { name: 'Lainnya', icon: '📦', type: 'income', income_type: 'active' }
+];
+
+const DEFAULT_ACCOUNTS = [
+  { name: 'Cash', type: 'cash', icon: '💵', balance: 0 },
+  { name: 'Bank BCA', type: 'bank', icon: '🏦', balance: 0 },
+  { name: 'GoPay', type: 'ewallet', icon: '📱', balance: 0 }
+];
+
 /**
  * Initialize the application
  */
@@ -72,6 +109,9 @@ async function initApp() {
  */
 async function loadInitialData() {
   try {
+    // Initialize default data if needed (first time user)
+    await initDefaultData();
+
     // Load accounts
     await loadAccounts();
 
@@ -84,6 +124,88 @@ async function loadInitialData() {
   } catch (error) {
     console.error('Load initial data error:', error);
     showToast('Gagal memuat data', 'error');
+  }
+}
+
+/**
+ * Initialize default data for new users (categories and accounts)
+ */
+async function initDefaultData() {
+  const userId = currentUser?.id;
+  if (!userId) return;
+
+  try {
+    // Check if user has any categories
+    const { data: existingCategories, error: catError } = await window.db
+      .from('categories')
+      .select('id')
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (catError) throw catError;
+
+    // If no categories exist, create defaults
+    if (!existingCategories || existingCategories.length === 0) {
+      console.log('Creating default categories for new user...');
+
+      // Insert expense categories
+      const expenseCategories = DEFAULT_EXPENSE_CATEGORIES.map(cat => ({
+        ...cat,
+        user_id: userId,
+        is_default: true
+      }));
+
+      const { error: expError } = await window.db
+        .from('categories')
+        .insert(expenseCategories);
+
+      if (expError) console.error('Error creating expense categories:', expError);
+
+      // Insert income categories
+      const incomeCategories = DEFAULT_INCOME_CATEGORIES.map(cat => ({
+        ...cat,
+        user_id: userId,
+        is_default: true
+      }));
+
+      const { error: incError } = await window.db
+        .from('categories')
+        .insert(incomeCategories);
+
+      if (incError) console.error('Error creating income categories:', incError);
+
+      console.log('✅ Default categories created');
+    }
+
+    // Check if user has any accounts
+    const { data: existingAccounts, error: accError } = await window.db
+      .from('accounts')
+      .select('id')
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (accError) throw accError;
+
+    // If no accounts exist, create defaults
+    if (!existingAccounts || existingAccounts.length === 0) {
+      console.log('Creating default accounts for new user...');
+
+      const defaultAccounts = DEFAULT_ACCOUNTS.map(acc => ({
+        ...acc,
+        user_id: userId
+      }));
+
+      const { error: insertError } = await window.db
+        .from('accounts')
+        .insert(defaultAccounts);
+
+      if (insertError) console.error('Error creating default accounts:', insertError);
+
+      console.log('✅ Default accounts created');
+    }
+
+  } catch (error) {
+    console.error('Init default data error:', error);
   }
 }
 
