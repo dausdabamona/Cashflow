@@ -1137,10 +1137,11 @@ function calculateItemCashflow(transactions) {
       cashflow[tx.item_id] = { totalIncome: 0, totalExpense: 0 };
     }
 
+    const amount = parseFloat(tx.amount) || 0;
     if (tx.type === 'income') {
-      cashflow[tx.item_id].totalIncome += tx.amount || 0;
+      cashflow[tx.item_id].totalIncome += amount;
     } else if (tx.type === 'expense') {
-      cashflow[tx.item_id].totalExpense += tx.amount || 0;
+      cashflow[tx.item_id].totalExpense += amount;
     }
   });
 
@@ -1547,21 +1548,18 @@ async function saveItemCash(event) {
     return;
   }
 
-  // Build description with classification info
-  const classificationLabels = {
-    'asset': '[ASET]',
-    'liability': '[LIABILITAS]',
-    'idle': '[IDLE]'
-  };
+  // Build description - use item name as primary description
+  let description = userDescription || `Pembelian ${name}`;
 
-  let description = '';
-  if (isConsumable) {
-    description = '[HABIS PAKAI]';
-  } else {
-    description = classificationLabels[classification] || '[ASET]';
-  }
-  if (userDescription) {
-    description += ' ' + userDescription;
+  // Add item type info as suffix if no user description
+  if (!userDescription) {
+    if (isConsumable) {
+      description = `Pembelian ${name} (habis pakai)`;
+    } else if (classification === 'asset') {
+      description = `Pembelian ${name} (aset)`;
+    } else if (classification === 'liability') {
+      description = `Pembelian ${name} (liabilitas)`;
+    }
   }
 
   try {
@@ -2051,8 +2049,8 @@ async function loadStats() {
  * Render stats HTML
  */
 function renderStats(incomeData, expenseData) {
-  const totalIncome = incomeData.reduce((sum, i) => sum + (i.total || 0), 0);
-  const totalExpense = expenseData.reduce((sum, e) => sum + (e.total || 0), 0);
+  const totalIncome = incomeData.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+  const totalExpense = expenseData.reduce((sum, e) => sum + (parseFloat(e.total) || 0), 0);
 
   return `
     <h2 class="text-lg font-semibold text-gray-900 mb-4">Statistik Bulan Ini</h2>
@@ -2081,7 +2079,12 @@ function renderStats(incomeData, expenseData) {
             <span class="text-gray-600 capitalize">${item.income_type || 'Lainnya'}</span>
             <span class="font-medium">${formatRupiahShort(item.total)}</span>
           </div>
-        `).join('') : '<p class="text-gray-500 text-sm text-center">Belum ada data pemasukan</p>'}
+        `).join('') : `
+          <div class="text-center py-4">
+            <span class="text-2xl">💰</span>
+            <p class="text-gray-500 text-sm mt-1">Belum ada pemasukan bulan ini</p>
+          </div>
+        `}
       </div>
     </div>
 
@@ -2100,7 +2103,12 @@ function renderStats(incomeData, expenseData) {
             </div>
             <span class="font-medium">${formatRupiahShort(item.total)}</span>
           </div>
-        `).join('') : '<p class="text-gray-500 text-sm text-center">Belum ada data pengeluaran</p>'}
+        `).join('') : `
+          <div class="text-center py-4">
+            <span class="text-2xl">📊</span>
+            <p class="text-gray-500 text-sm mt-1">Belum ada pengeluaran bulan ini</p>
+          </div>
+        `}
       </div>
     </div>
   `;
@@ -2118,7 +2126,7 @@ function initStatsCharts(incomeData, expenseData) {
       data: {
         labels: incomeData.map(d => d.income_type || 'Lainnya'),
         datasets: [{
-          data: incomeData.map(d => d.total),
+          data: incomeData.map(d => parseFloat(d.total) || 0),
           backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6'],
           borderWidth: 0
         }]
@@ -2140,7 +2148,7 @@ function initStatsCharts(incomeData, expenseData) {
       data: {
         labels: expenseData.slice(0, 6).map(d => d.category_name || 'Lainnya'),
         datasets: [{
-          data: expenseData.slice(0, 6).map(d => d.total),
+          data: expenseData.slice(0, 6).map(d => parseFloat(d.total) || 0),
           backgroundColor: colors,
           borderWidth: 0
         }]

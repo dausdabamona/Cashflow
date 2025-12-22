@@ -6,11 +6,13 @@
  * @returns {string} Formatted currency string
  */
 function formatRupiah(amount) {
+  // Safely parse amount to number, default to 0 if invalid
+  const num = parseFloat(amount) || 0;
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0
-  }).format(amount);
+  }).format(num);
 }
 
 /**
@@ -19,16 +21,18 @@ function formatRupiah(amount) {
  * @returns {string} Short formatted string
  */
 function formatRupiahShort(amount) {
-  if (Math.abs(amount) >= 1000000000) {
-    return `Rp ${(amount / 1000000000).toFixed(1)}M`;
+  // Safely parse amount to number, default to 0 if invalid
+  const num = parseFloat(amount) || 0;
+  if (Math.abs(num) >= 1000000000) {
+    return `Rp ${(num / 1000000000).toFixed(1)}M`;
   }
-  if (Math.abs(amount) >= 1000000) {
-    return `Rp ${(amount / 1000000).toFixed(1)}jt`;
+  if (Math.abs(num) >= 1000000) {
+    return `Rp ${(num / 1000000).toFixed(1)}jt`;
   }
-  if (Math.abs(amount) >= 1000) {
-    return `Rp ${(amount / 1000).toFixed(0)}rb`;
+  if (Math.abs(num) >= 1000) {
+    return `Rp ${(num / 1000).toFixed(0)}rb`;
   }
-  return formatRupiah(amount);
+  return formatRupiah(num);
 }
 
 /**

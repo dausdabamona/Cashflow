@@ -728,8 +728,8 @@ async function createItemWithExpense(amount, accountId, date, itemName, itemType
   const userId = currentUser?.id;
   if (!userId) throw new Error('User tidak terautentikasi');
 
-  // Build description with IDLE classification (will be calculated later)
-  const itemDescription = '[IDLE] ' + (description || 'Pembelian ' + itemName);
+  // Build description - use item name as primary description
+  const itemDescription = description || `Pembelian ${itemName}`;
 
   const { error } = await window.db.rpc('buy_item_cash', {
     p_user_id: userId,

@@ -158,12 +158,12 @@ function renderDashboard(summary, transactions) {
       </div>
 
       <div class="grid grid-cols-2 gap-4 pt-3 border-t border-current border-opacity-20">
-        <div>
-          <p class="text-xs opacity-70">Passive Income</p>
+        <div title="Pendapatan tanpa kerja aktif: sewa, dividen, royalti">
+          <p class="text-xs opacity-70">Pendapatan Pasif</p>
           <p class="font-semibold">${formatRupiahShort(passiveIncome)}</p>
         </div>
-        <div>
-          <p class="text-xs opacity-70">Passive Expense</p>
+        <div title="Cicilan hutang dan pengeluaran rutin wajib">
+          <p class="text-xs opacity-70">Cicilan & Rutin</p>
           <p class="font-semibold">${formatRupiahShort(passiveExpense)}</p>
         </div>
       </div>
@@ -233,12 +233,17 @@ function renderDashboard(summary, transactions) {
     <div class="card mb-4">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-semibold text-gray-900">Health Score</h3>
-        <span class="text-2xl font-bold ${getHealthScoreColor(healthScore)}">${healthScore}</span>
+        <div class="text-right">
+          <span class="text-2xl font-bold ${getHealthScoreColor(healthScore)}">${healthScore}</span>
+          <span class="text-sm text-gray-500">/100</span>
+          <span class="ml-1 px-2 py-0.5 rounded text-xs font-bold ${getHealthScoreGradeBadge(healthScore)}">${getHealthScoreGrade(healthScore)}</span>
+        </div>
       </div>
       <div class="progress-bar">
         <div class="progress-fill ${getHealthScoreBarColor(healthScore)} progress-animated" style="width: ${healthScore}%"></div>
       </div>
-      <p class="text-sm text-gray-500 mt-2">${getHealthScoreMessage(healthScore)}</p>
+      <p class="text-sm text-gray-600 mt-2">${getHealthScoreMessage(healthScore)}</p>
+      <p class="text-xs text-blue-600 mt-1">💡 ${getHealthScoreTips(healthScore)}</p>
     </div>
 
     <!-- Recent Transactions -->
@@ -254,8 +259,13 @@ function renderDashboard(summary, transactions) {
         </div>
       ` : `
         <div class="text-center py-8">
-          <i data-lucide="inbox" class="w-12 h-12 text-gray-300 mx-auto mb-2"></i>
-          <p class="text-gray-500 text-sm">Belum ada transaksi</p>
+          <span class="text-4xl">📝</span>
+          <h4 class="font-medium text-gray-900 mt-2">Belum ada transaksi</h4>
+          <p class="text-gray-500 text-sm mt-1">Mulai catat pemasukan dan pengeluaran Anda</p>
+          <button onclick="document.getElementById('fabBtn')?.click()" class="btn btn-primary mt-4">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Tambah Transaksi</span>
+          </button>
         </div>
       `}
     </div>
@@ -331,13 +341,47 @@ function getHealthScoreBarColor(score) {
 }
 
 /**
+ * Get health score grade (A+, A, B, C, D, E)
+ */
+function getHealthScoreGrade(score) {
+  if (score >= 90) return 'A+';
+  if (score >= 80) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 60) return 'C';
+  if (score >= 40) return 'D';
+  return 'E';
+}
+
+/**
+ * Get health score grade badge class
+ */
+function getHealthScoreGradeBadge(score) {
+  if (score >= 80) return 'bg-green-100 text-green-800';
+  if (score >= 60) return 'bg-yellow-100 text-yellow-800';
+  if (score >= 40) return 'bg-orange-100 text-orange-800';
+  return 'bg-red-100 text-red-800';
+}
+
+/**
  * Get health score message
  */
 function getHealthScoreMessage(score) {
-  if (score >= 80) return 'Kesehatan keuangan sangat baik! Pertahankan!';
-  if (score >= 60) return 'Kesehatan keuangan cukup baik. Ada ruang untuk perbaikan.';
-  if (score >= 40) return 'Kesehatan keuangan perlu perhatian.';
-  return 'Kesehatan keuangan perlu perbaikan segera.';
+  if (score >= 80) return 'Excellent! Keuangan Anda sangat sehat.';
+  if (score >= 60) return 'Good. Keuangan cukup sehat, ada ruang perbaikan.';
+  if (score >= 40) return 'Warning. Keuangan perlu perhatian lebih.';
+  if (score >= 20) return 'Critical. Segera evaluasi keuangan Anda.';
+  return 'Emergency. Butuh tindakan segera!';
+}
+
+/**
+ * Get health score tips
+ */
+function getHealthScoreTips(score) {
+  if (score >= 80) return 'Pertahankan dan tingkatkan passive income.';
+  if (score >= 60) return 'Tingkatkan tabungan, kurangi hutang konsumtif.';
+  if (score >= 40) return 'Fokus kurangi pengeluaran tidak perlu.';
+  if (score >= 20) return 'Evaluasi cicilan dan pengeluaran besar.';
+  return 'Hentikan pengeluaran non-esensial segera.';
 }
 
 /**

@@ -257,10 +257,11 @@ function formatDateHeader(dateStr) {
  */
 function getDayTotal(transactions) {
   return transactions.reduce((sum, tx) => {
+    const amount = parseFloat(tx.amount) || 0;
     if (tx.type === 'income') {
-      return sum + tx.amount;
+      return sum + amount;
     } else if (tx.type === 'expense') {
-      return sum - tx.amount;
+      return sum - amount;
     }
     return sum;
   }, 0);

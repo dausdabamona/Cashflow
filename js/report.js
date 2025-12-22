@@ -534,7 +534,7 @@ function initReportCharts(summary, incomeData, expenseData) {
         data: {
           labels: incomeData.map(d => d.income_type || 'Lainnya'),
           datasets: [{
-            data: incomeData.map(d => d.total),
+            data: incomeData.map(d => parseFloat(d.total) || 0),
             backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6'],
             borderWidth: 0
           }]
@@ -560,7 +560,7 @@ function initReportCharts(summary, incomeData, expenseData) {
         data: {
           labels: expenseData.slice(0, 6).map(d => d.category_name || 'Lainnya'),
           datasets: [{
-            data: expenseData.slice(0, 6).map(d => d.total),
+            data: expenseData.slice(0, 6).map(d => parseFloat(d.total) || 0),
             backgroundColor: colors,
             borderWidth: 0
           }]
