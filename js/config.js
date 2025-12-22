@@ -2,8 +2,8 @@
 // GANTI dengan credentials dari Supabase Dashboard
 // Settings > API > Project URL & anon key
 
-const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
+const SUPABASE_URL = 'https://zgsjkggxrqqbqfzglder.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpnc2prZ2d4cnFxYnFmemdsZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNzE1MzgsImV4cCI6MjA4MTk0NzUzOH0.nYUNqMdUCyGMv4mfoE2427GpHOrSfHgFGWiNHnmAjlc';
 
 // Validation - Check if credentials are configured
 const isConfigured = SUPABASE_URL &&
