@@ -1299,6 +1299,18 @@ function showAddItemCashModal() {
             </div>
 
             <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Tipe Aset</label>
+              <select id="itemCashType" required
+                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                <option value="property">Properti (Rumah, Tanah)</option>
+                <option value="vehicle">Kendaraan</option>
+                <option value="equipment">Peralatan</option>
+                <option value="investment">Investasi</option>
+                <option value="other">Lainnya</option>
+              </select>
+            </div>
+
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Harga Beli</label>
               <input type="text" id="itemCashPrice" required
                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
@@ -1317,11 +1329,18 @@ function showAddItemCashModal() {
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Penghasilan Bulanan (jika ada)</label>
-              <input type="text" id="itemCashIncome"
+              <label class="block text-sm font-medium text-gray-700 mb-1">Catatan/Deskripsi (opsional)</label>
+              <input type="text" id="itemCashDescription"
                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-                     placeholder="0 (kosongkan jika tidak menghasilkan)"
-                     oninput="this.value = this.value.replace(/\\D/g, '').replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.')">
+                     placeholder="Contoh: Penghasilan bulanan Rp 5jt">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Umur Pakai (bulan, opsional)</label>
+              <input type="number" id="itemCashUsefulLife"
+                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+                     placeholder="0 (kosongkan jika tidak ada)"
+                     min="0">
             </div>
           </div>
 
@@ -1349,13 +1368,14 @@ async function saveItemCash(event) {
   event.preventDefault();
 
   const name = document.getElementById('itemCashName')?.value?.trim();
+  const type = document.getElementById('itemCashType')?.value || 'other';
   const priceStr = document.getElementById('itemCashPrice')?.value?.replace(/\D/g, '') || '0';
-  const price = parseInt(priceStr) || 0;
+  const purchaseValue = parseInt(priceStr) || 0;
   const accountId = document.getElementById('itemCashAccount')?.value;
-  const incomeStr = document.getElementById('itemCashIncome')?.value?.replace(/\D/g, '') || '0';
-  const monthlyIncome = parseInt(incomeStr) || 0;
+  const description = document.getElementById('itemCashDescription')?.value?.trim() || null;
+  const usefulLifeMonths = parseInt(document.getElementById('itemCashUsefulLife')?.value) || 0;
 
-  if (!name || !price || !accountId) {
+  if (!name || !purchaseValue || !accountId) {
     showToast('Lengkapi semua data wajib', 'error');
     return;
   }
@@ -1366,9 +1386,12 @@ async function saveItemCash(event) {
     const { error } = await window.db.rpc('buy_item_cash', {
       p_user_id: currentUser?.id,
       p_name: name,
-      p_purchase_price: price,
+      p_type: type,
+      p_purchase_value: purchaseValue,
       p_account_id: accountId,
-      p_monthly_income: monthlyIncome,
+      p_description: description,
+      p_depreciation_method: usefulLifeMonths > 0 ? 'straight_line' : 'none',
+      p_useful_life_months: usefulLifeMonths,
       p_date: getToday()
     });
 
