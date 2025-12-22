@@ -64,8 +64,13 @@ async function initApp() {
     }
     currentUser = user;
     window.currentUser = user;
+
+    // Initialize AppStore dengan user
+    if (typeof AppStore !== 'undefined') {
+      AppStore.init(user);
+    }
   } catch (error) {
-    console.error('Auth check failed:', error);
+    ErrorHandler?.error('Auth check failed:', error) || console.error('Auth check failed:', error);
     window.location.href = 'index.html';
     return;
   }
@@ -102,11 +107,18 @@ async function initApp() {
   // Listen for auth state changes
   window.db.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
+      // Reset AppStore saat logout
+      if (typeof AppStore !== 'undefined') {
+        AppStore.reset();
+      }
       window.location.href = 'index.html';
     }
   });
 
-  console.log('✅ App initialized successfully');
+  // Dispatch appReady event
+  window.dispatchEvent(new Event('appReady'));
+
+  ErrorHandler?.info('App initialized successfully') || console.log('✅ App initialized successfully');
 }
 
 /**
@@ -214,9 +226,18 @@ async function initDefaultData() {
 
 /**
  * Load accounts from database and populate dropdown
+ * Uses AccountService if available, falls back to direct query
  */
 async function loadAccounts() {
   try {
+    // Use AccountService if available
+    if (typeof AccountService !== 'undefined') {
+      accounts = await AccountService.getAll();
+      window.accounts = accounts;
+      return accounts;
+    }
+
+    // Fallback to direct query
     const { data, error } = await window.db
       .from('accounts')
       .select('*')
@@ -227,17 +248,29 @@ async function loadAccounts() {
     window.accounts = accounts;
     return accounts;
   } catch (error) {
-    console.error('Load accounts error:', error);
+    ErrorHandler?.handle(error, 'loadAccounts', false) || console.error('Load accounts error:', error);
     return [];
   }
 }
 
 /**
  * Load categories by type from database and populate dropdown
+ * Uses CategoryService if available, falls back to direct query
  * @param {string} type - 'income' or 'expense' (optional, loads all if not specified)
  */
 async function loadCategories(type = null) {
   try {
+    // Use CategoryService if available
+    if (typeof CategoryService !== 'undefined') {
+      if (type) {
+        return await CategoryService.getByType(type);
+      }
+      categories = await CategoryService.getAll();
+      window.categories = categories;
+      return categories;
+    }
+
+    // Fallback to direct query
     let query = window.db.from('categories').select('*');
 
     if (type) {
@@ -255,7 +288,7 @@ async function loadCategories(type = null) {
 
     return data || [];
   } catch (error) {
-    console.error('Load categories error:', error);
+    ErrorHandler?.handle(error, 'loadCategories', false) || console.error('Load categories error:', error);
     return [];
   }
 }

@@ -1,15 +1,20 @@
 // Cashflow Tracker - Transaction Module
 
 /**
- * Record an expense
+ * Record an expense - uses RPC for atomic balance updates
  */
 async function recordExpense(amount, accountId, categoryId, date, description) {
-  const userId = currentUser?.id;
+  const userId = currentUser?.id || AppStore?.getUserId();
   if (!userId) throw new Error('User not authenticated');
+
+  // Validate amount using Validator if available
+  const validAmount = typeof Validator !== 'undefined'
+    ? Validator.positiveNumber(amount, 'Amount')
+    : Math.abs(parseFloat(amount) || 0);
 
   const { data, error } = await window.db.rpc('record_expense', {
     p_user_id: userId,
-    p_amount: amount,
+    p_amount: validAmount,
     p_account_id: accountId,
     p_category_id: categoryId,
     p_date: date,
@@ -18,19 +23,31 @@ async function recordExpense(amount, accountId, categoryId, date, description) {
   });
 
   if (error) throw error;
+
+  // Invalidate cache setelah transaksi berhasil
+  if (typeof AppStore !== 'undefined') {
+    AppStore.invalidateCache('transactions');
+    AppStore.invalidateCache('accounts');
+  }
+
   return data;
 }
 
 /**
- * Record an income
+ * Record an income - uses RPC for atomic balance updates
  */
 async function recordIncome(amount, accountId, categoryId, date, description, incomeType = 'active') {
-  const userId = currentUser?.id;
+  const userId = currentUser?.id || AppStore?.getUserId();
   if (!userId) throw new Error('User not authenticated');
+
+  // Validate amount using Validator if available
+  const validAmount = typeof Validator !== 'undefined'
+    ? Validator.positiveNumber(amount, 'Amount')
+    : Math.abs(parseFloat(amount) || 0);
 
   const { data, error } = await window.db.rpc('record_income', {
     p_user_id: userId,
-    p_amount: amount,
+    p_amount: validAmount,
     p_account_id: accountId,
     p_category_id: categoryId,
     p_date: date,
@@ -40,26 +57,51 @@ async function recordIncome(amount, accountId, categoryId, date, description, in
   });
 
   if (error) throw error;
+
+  // Invalidate cache setelah transaksi berhasil
+  if (typeof AppStore !== 'undefined') {
+    AppStore.invalidateCache('transactions');
+    AppStore.invalidateCache('accounts');
+  }
+
   return data;
 }
 
 /**
- * Transfer funds between accounts
+ * Transfer funds between accounts - uses RPC for atomic balance updates
  */
 async function transferFunds(fromAccountId, toAccountId, amount, description) {
-  const userId = currentUser?.id;
+  const userId = currentUser?.id || AppStore?.getUserId();
   if (!userId) throw new Error('User not authenticated');
+
+  // Validate transfer data using Validator if available
+  if (typeof Validator !== 'undefined') {
+    if (fromAccountId === toAccountId) {
+      throw new Error('Akun asal dan tujuan tidak boleh sama');
+    }
+  }
+
+  const validAmount = typeof Validator !== 'undefined'
+    ? Validator.positiveNumber(amount, 'Amount')
+    : Math.abs(parseFloat(amount) || 0);
 
   const { data, error } = await window.db.rpc('transfer_funds', {
     p_user_id: userId,
     p_from_account_id: fromAccountId,
     p_to_account_id: toAccountId,
-    p_amount: amount,
+    p_amount: validAmount,
     p_date: getToday(),
     p_description: description || null
   });
 
   if (error) throw error;
+
+  // Invalidate cache setelah transfer berhasil
+  if (typeof AppStore !== 'undefined') {
+    AppStore.invalidateCache('transactions');
+    AppStore.invalidateCache('accounts');
+  }
+
   return data;
 }
 
@@ -105,11 +147,12 @@ async function loadHistory(page = 0) {
     lucide.createIcons();
 
   } catch (error) {
-    console.error('Load history error:', error);
+    ErrorHandler?.handle(error, 'loadHistory', false) || console.error('Load history error:', error);
     container.innerHTML = `
       <div class="card text-center py-8">
         <i data-lucide="alert-circle" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
         <p class="text-gray-500">Gagal memuat riwayat transaksi</p>
+        <p class="text-xs text-gray-400 mt-1">${error.message || 'Unknown error'}</p>
         <button onclick="loadHistory()" class="btn btn-secondary mt-4">Coba Lagi</button>
       </div>
     `;
@@ -253,11 +296,13 @@ function formatDateHeader(dateStr) {
 }
 
 /**
- * Calculate day total
+ * Calculate day total - uses Validator for safe parsing
  */
 function getDayTotal(transactions) {
   return transactions.reduce((sum, tx) => {
-    const amount = parseFloat(tx.amount) || 0;
+    const amount = typeof Validator !== 'undefined'
+      ? Validator.currency(tx.amount, 0)
+      : (parseFloat(tx.amount) || 0);
     if (tx.type === 'income') {
       return sum + amount;
     } else if (tx.type === 'expense') {
@@ -276,7 +321,7 @@ function showTransactionDetail(transactionId) {
 }
 
 /**
- * Delete transaction
+ * Delete transaction - soft delete and invalidate cache
  */
 async function deleteTransaction(transactionId) {
   const confirmed = await showConfirm('Hapus transaksi ini?');
@@ -291,14 +336,19 @@ async function deleteTransaction(transactionId) {
 
     if (error) throw error;
 
+    // Invalidate cache setelah delete
+    if (typeof AppStore !== 'undefined') {
+      AppStore.invalidateCache('transactions');
+      AppStore.invalidateCache('accounts');
+    }
+
     hideLoading();
-    showToast('Transaksi dihapus', 'success');
+    ErrorHandler?.showSuccess('DELETE', 'Transaksi dihapus') || showToast('Transaksi dihapus', 'success');
     await loadHistory();
 
   } catch (error) {
     hideLoading();
-    console.error('Delete transaction error:', error);
-    showToast('Gagal menghapus transaksi', 'error');
+    ErrorHandler?.handle(error, 'deleteTransaction') || console.error('Delete transaction error:', error);
   }
 }
 

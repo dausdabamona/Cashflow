@@ -1,7 +1,7 @@
 // Cashflow Tracker - Dashboard Module
 
 /**
- * Load dashboard view - using direct queries instead of RPC
+ * Load dashboard view - uses DashboardService if available
  */
 async function loadDashboard() {
   const container = document.getElementById('dashboardView');
@@ -11,103 +11,124 @@ async function loadDashboard() {
     // Show loading skeleton
     container.innerHTML = getDashboardSkeleton();
 
-    const userId = currentUser?.id;
+    const userId = currentUser?.id || AppStore?.getUserId();
     if (!userId) {
-      console.log('No user ID found');
+      ErrorHandler?.warn('No user ID found') || console.log('No user ID found');
       return;
     }
 
-    // 1. Get accounts for total balance
-    const { data: accountsData, error: accError } = await window.db
-      .from('accounts')
-      .select('*')
-      .eq('user_id', userId);
+    let summary, recentTx;
 
-    if (accError) throw accError;
+    // Use DashboardService if available
+    if (typeof DashboardService !== 'undefined') {
+      const data = await DashboardService.loadDashboard();
+      if (data) {
+        summary = {
+          total_balance: data.totalBalance || 0,
+          month_income: data.monthlyIncome || 0,
+          month_expense: data.monthlyExpense || 0,
+          passive_income: data.passiveIncome || 0,
+          passive_expense: data.passiveExpense || 0,
+          health_score: data.healthScore || 50,
+          health_details: data.healthScoreDetails,
+          kiyosaki_status: data.kiyosakiStatus
+        };
+        recentTx = data.recentTransactions || [];
+      }
+    }
 
-    // 2. Calculate month boundaries
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startDateStr = startOfMonth.toISOString().split('T')[0];
+    // Fallback to direct queries if DashboardService not available or failed
+    if (!summary) {
+      // 1. Get accounts for total balance
+      const { data: accountsData, error: accError } = await window.db
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId);
 
-    // 3. Get transactions for this month
-    const { data: monthTransactions, error: txError } = await window.db
-      .from('transactions')
-      .select('*, category:categories(name, icon, type, income_type)')
-      .eq('user_id', userId)
-      .gte('date', startDateStr)
-      .order('date', { ascending: false });
+      if (accError) throw accError;
 
-    if (txError) throw txError;
+      // 2. Calculate month boundaries
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startDateStr = startOfMonth.toISOString().split('T')[0];
 
-    // 4. Get 5 recent transactions for display (without account embed to avoid relationship ambiguity)
-    const { data: recentTx, error: recentError } = await window.db
-      .from('transactions')
-      .select('*, category:categories(name, icon)')
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .limit(5);
+      // 3. Get transactions for this month
+      const { data: monthTransactions, error: txError } = await window.db
+        .from('transactions')
+        .select('*, category:categories(name, icon, type, income_type)')
+        .eq('user_id', userId)
+        .gte('date', startDateStr)
+        .order('date', { ascending: false });
 
-    if (recentError) throw recentError;
+      if (txError) throw txError;
 
-    // 4b. Map account names to recent transactions
-    const accountMap = {};
-    (accountsData || []).forEach(acc => { accountMap[acc.id] = acc.name; });
-    (recentTx || []).forEach(tx => {
-      tx.account = { name: accountMap[tx.account_id] || 'Unknown' };
-    });
+      // 4. Get 5 recent transactions for display
+      const { data: recentData, error: recentError } = await window.db
+        .from('transactions')
+        .select('*, category:categories(name, icon)')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(5);
 
-    // 5. Calculate totals
-    const totalBalance = (accountsData || []).reduce((sum, acc) =>
-      sum + parseFloat(acc.current_balance || 0), 0);
+      if (recentError) throw recentError;
 
-    const transactions = monthTransactions || [];
+      // 4b. Map account names to recent transactions
+      const accountMap = {};
+      (accountsData || []).forEach(acc => { accountMap[acc.id] = acc.name; });
+      recentTx = (recentData || []).map(tx => ({
+        ...tx,
+        account: { name: accountMap[tx.account_id] || 'Unknown' }
+      }));
 
-    // Income and expense this month
-    const monthIncome = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+      // 5. Calculate totals using Validator for safe parsing
+      const totalBalance = (accountsData || []).reduce((sum, acc) =>
+        sum + (typeof Validator !== 'undefined' ? Validator.currency(acc.current_balance, 0) : parseFloat(acc.current_balance || 0)), 0);
 
-    const monthExpense = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+      const transactions = monthTransactions || [];
 
-    // Passive income (from categories with income_type = 'passive')
-    const passiveIncome = transactions
-      .filter(t => t.type === 'income' && t.category?.income_type === 'passive')
-      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+      const monthIncome = transactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + (typeof Validator !== 'undefined' ? Validator.currency(t.amount, 0) : parseFloat(t.amount || 0)), 0);
 
-    // For now, passive expense is considered as recurring expenses (simplified)
-    // In a more complete implementation, this would come from items/loans
-    const passiveExpense = monthExpense * 0.3; // Estimate 30% as passive/recurring
+      const monthExpense = transactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + (typeof Validator !== 'undefined' ? Validator.currency(t.amount, 0) : parseFloat(t.amount || 0)), 0);
 
-    // 6. Calculate health score (simplified)
-    let healthScore = 50;
-    const savingsRate = monthIncome > 0 ? ((monthIncome - monthExpense) / monthIncome) * 100 : 0;
+      const passiveIncome = transactions
+        .filter(t => t.type === 'income' && t.category?.income_type === 'passive')
+        .reduce((sum, t) => sum + (typeof Validator !== 'undefined' ? Validator.currency(t.amount, 0) : parseFloat(t.amount || 0)), 0);
 
-    if (savingsRate >= 30) healthScore = 90;
-    else if (savingsRate >= 20) healthScore = 80;
-    else if (savingsRate >= 10) healthScore = 70;
-    else if (savingsRate >= 0) healthScore = 60;
-    else if (savingsRate >= -10) healthScore = 40;
-    else healthScore = 20;
+      // Estimate passive expense as 30% of total expense (simplified)
+      const passiveExpense = monthExpense * 0.3;
 
-    // 7. Build summary object
-    const summary = {
-      total_balance: totalBalance,
-      month_income: monthIncome,
-      month_expense: monthExpense,
-      passive_income: passiveIncome,
-      passive_expense: passiveExpense,
-      health_score: healthScore
-    };
+      // 6. Calculate health score
+      let healthScore = 50;
+      const savingsRate = monthIncome > 0 ? ((monthIncome - monthExpense) / monthIncome) * 100 : 0;
+
+      if (savingsRate >= 30) healthScore = 90;
+      else if (savingsRate >= 20) healthScore = 80;
+      else if (savingsRate >= 10) healthScore = 70;
+      else if (savingsRate >= 0) healthScore = 60;
+      else if (savingsRate >= -10) healthScore = 40;
+      else healthScore = 20;
+
+      // 7. Build summary object
+      summary = {
+        total_balance: totalBalance,
+        month_income: monthIncome,
+        month_expense: monthExpense,
+        passive_income: passiveIncome,
+        passive_expense: passiveExpense,
+        health_score: healthScore
+      };
+    }
 
     // 8. Render dashboard
     container.innerHTML = renderDashboard(summary, recentTx || []);
     lucide.createIcons();
 
   } catch (error) {
-    console.error('Load dashboard error:', error);
+    ErrorHandler?.handle(error, 'loadDashboard', false) || console.error('Load dashboard error:', error);
     container.innerHTML = `
       <div class="card text-center py-8">
         <i data-lucide="alert-circle" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
