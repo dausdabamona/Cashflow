@@ -104,6 +104,38 @@ function renderSettings(profile) {
       </div>
     </div>
 
+    <!-- Data Management -->
+    <div class="card mb-4">
+      <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Kelola Data</h3>
+      <div class="space-y-1">
+        <button onclick="confirmImportData()" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+              <i data-lucide="upload" class="w-5 h-5 text-purple-600"></i>
+            </div>
+            <div class="text-left">
+              <span class="font-medium text-gray-900">Import Data Excel</span>
+              <p class="text-xs text-gray-500">Masukkan data transaksi awal</p>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+        </button>
+
+        <button onclick="confirmClearData()" class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-red-50 transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+              <i data-lucide="trash-2" class="w-5 h-5 text-red-600"></i>
+            </div>
+            <div class="text-left">
+              <span class="font-medium text-red-600">Hapus Semua Data</span>
+              <p class="text-xs text-gray-500">Reset ke kondisi awal</p>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+        </button>
+      </div>
+    </div>
+
     <!-- Danger Zone -->
     <div class="card border border-red-200">
       <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 p-3 text-red-600 font-medium">
@@ -1895,3 +1927,43 @@ window.payLoan = payLoan;
 window.handleLogout = handleLogout;
 window.loadStats = loadStats;
 window.closeModal = closeModal;
+window.confirmImportData = confirmImportData;
+window.confirmClearData = confirmClearData;
+
+// ========================================
+// DATA IMPORT/CLEAR FUNCTIONS
+// ========================================
+
+/**
+ * Confirm and run import data
+ */
+async function confirmImportData() {
+  const confirmed = await showConfirm(
+    'Import data akan MENGHAPUS semua data yang ada dan menggantinya dengan data baru dari Excel.\n\nLanjutkan?'
+  );
+
+  if (confirmed) {
+    if (typeof importInitialData === 'function') {
+      await importInitialData();
+    } else {
+      showToast('Fungsi import tidak tersedia', 'error');
+    }
+  }
+}
+
+/**
+ * Confirm and clear all data
+ */
+async function confirmClearData() {
+  const confirmed = await showConfirm(
+    'PERINGATAN: Semua data transaksi, kategori, dan akun akan DIHAPUS PERMANEN!\n\nTindakan ini tidak dapat dibatalkan. Lanjutkan?'
+  );
+
+  if (confirmed) {
+    if (typeof clearAllData === 'function') {
+      await clearAllData();
+    } else {
+      showToast('Fungsi clear tidak tersedia', 'error');
+    }
+  }
+}
