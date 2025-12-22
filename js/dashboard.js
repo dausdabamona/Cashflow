@@ -35,7 +35,6 @@ async function loadDashboard() {
       .from('transactions')
       .select('*, category:categories(name, icon, type, income_type)')
       .eq('user_id', userId)
-      .eq('is_deleted', false)
       .gte('date', startDateStr)
       .order('date', { ascending: false });
 
@@ -46,7 +45,6 @@ async function loadDashboard() {
       .from('transactions')
       .select('*, category:categories(name, icon), account:accounts(name)')
       .eq('user_id', userId)
-      .eq('is_deleted', false)
       .order('date', { ascending: false })
       .limit(5);
 

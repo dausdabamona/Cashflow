@@ -7,18 +7,12 @@ async function loadSettings() {
   const container = document.getElementById('settingsView');
   if (!container) return;
 
-  // Load user profile data
-  let profile = null;
-  try {
-    const { data } = await window.db
-      .from('user_profiles')
-      .select('*')
-      .eq('user_id', currentUser?.id)
-      .single();
-    profile = data;
-  } catch (e) {
-    console.log('Profile not found, using defaults');
-  }
+  // Use user metadata from auth instead of separate table
+  const user = currentUser || window.currentUser;
+  const profile = {
+    display_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+    target_passive_income: user?.user_metadata?.target_passive_income || 0
+  };
 
   container.innerHTML = renderSettings(profile);
   lucide.createIcons();
@@ -160,18 +154,9 @@ function renderSettings(profile) {
  * Show edit profile modal
  */
 async function showEditProfileModal() {
-  let profile = null;
-  try {
-    const { data } = await window.db
-      .from('user_profiles')
-      .select('*')
-      .eq('user_id', currentUser?.id)
-      .single();
-    profile = data;
-  } catch (e) {}
-
-  const displayName = profile?.display_name || currentUser?.user_metadata?.full_name || '';
-  const targetPassiveIncome = profile?.target_passive_income || 0;
+  const user = currentUser || window.currentUser;
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '';
+  const targetPassiveIncome = user?.user_metadata?.target_passive_income || 0;
 
   const modalHtml = `
     <div id="profileModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -231,21 +216,35 @@ async function updateProfile(event) {
   try {
     showLoading();
 
-    const { error } = await window.db
-      .from('user_profiles')
-      .upsert({
-        user_id: currentUser?.id,
-        display_name: name,
-        target_passive_income: target,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
+    // Update user metadata via Supabase Auth
+    const { error } = await window.db.auth.updateUser({
+      data: {
+        full_name: name,
+        target_passive_income: target
+      }
+    });
 
     if (error) throw error;
+
+    // Update local currentUser
+    if (currentUser) {
+      currentUser.user_metadata = {
+        ...currentUser.user_metadata,
+        full_name: name,
+        target_passive_income: target
+      };
+    }
 
     hideLoading();
     closeModal('profileModal');
     showToast('Profil berhasil diperbarui', 'success');
     await loadSettings();
+
+    // Update header name
+    const userNameEl = document.getElementById('userName');
+    if (userNameEl) {
+      userNameEl.textContent = `Hai, ${name || 'User'}!`;
+    }
 
   } catch (error) {
     hideLoading();

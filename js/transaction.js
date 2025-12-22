@@ -83,9 +83,8 @@ async function loadHistory(page = 0) {
     const { data: transactions, error, count } = await window.db
       .from('transactions')
       .select('*, account:accounts(name), category:categories(name, icon)', { count: 'exact' })
-      .eq('is_deleted', false)
+      .eq('user_id', userId)
       .order('date', { ascending: false })
-      .order('created_at', { ascending: false })
       .range(offset, offset + pageSize - 1);
 
     if (error) throw error;

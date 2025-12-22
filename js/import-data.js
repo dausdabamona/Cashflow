@@ -175,8 +175,7 @@ async function importInitialData() {
         amount: tx.amount,
         description: tx.desc,
         account_id: accountId,
-        category_id: cat.id,
-        is_deleted: false
+        category_id: cat.id
       };
 
       if (tx.type === 'income') {
