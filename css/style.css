@@ -429,38 +429,189 @@ body {
   100% { background-position: -200% 0; }
 }
 
-/* Dark Mode Support */
+/* Dark Mode Support - Eye Comfort Theme */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary: #111827;
-    --bg-card: #1F2937;
-    --text-primary: #F9FAFB;
-    --text-secondary: #9CA3AF;
+    /* Warm dark colors - easier on eyes */
+    --bg-primary: #1a1a1a;
+    --bg-card: #262626;
+    --bg-elevated: #2d2d2d;
+    --text-primary: #e8e6e3;
+    --text-secondary: #a8a29e;
+
+    /* Reduced saturation status colors for dark mode */
+    --color-asset: #4ade80;
+    --color-liability: #f87171;
+    --color-neutral: #fbbf24;
+    --color-progress: #60a5fa;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  .card {
+    background: var(--bg-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 
   .input-field {
-    background: #374151;
-    border-color: #4B5563;
+    background: var(--bg-elevated);
+    border-color: #404040;
+    color: var(--text-primary);
+  }
+
+  .input-field:focus {
+    border-color: var(--color-progress);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  }
+
+  .input-field::placeholder {
+    color: var(--text-secondary);
+  }
+
+  select.input-field option {
+    background: var(--bg-card);
     color: var(--text-primary);
   }
 
   .category-chip {
-    background: #374151;
+    background: var(--bg-elevated);
     color: var(--text-primary);
   }
 
+  .category-chip.selected {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: var(--color-progress);
+  }
+
   .btn-secondary {
-    background: #374151;
+    background: var(--bg-elevated);
     color: var(--text-primary);
+  }
+
+  .btn-secondary:hover {
+    background: #404040;
+  }
+
+  .btn-danger {
+    background: rgba(248, 113, 113, 0.2);
+    color: #fca5a5;
+  }
+
+  .btn-success {
+    background: rgba(74, 222, 128, 0.2);
+    color: #86efac;
   }
 
   .bottom-nav {
     background: var(--bg-card);
-    border-color: #374151;
+    border-color: #333333;
+  }
+
+  .bottom-sheet {
+    background: var(--bg-card);
+  }
+
+  .bottom-sheet-handle {
+    background: #525252;
   }
 
   .transaction-item:active {
-    background: #374151;
+    background: var(--bg-elevated);
+  }
+
+  .modal-overlay {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  /* Fix modal backgrounds */
+  .fixed.inset-0.bg-black\/50 {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .bg-white {
+    background: var(--bg-card) !important;
+  }
+
+  /* Text colors in dark mode */
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700 {
+    color: var(--text-primary) !important;
+  }
+
+  .text-gray-600,
+  .text-gray-500,
+  .text-gray-400 {
+    color: var(--text-secondary) !important;
+  }
+
+  /* Border colors */
+  .border-gray-200,
+  .border-gray-100 {
+    border-color: #404040 !important;
+  }
+
+  /* Background colors */
+  .bg-gray-50,
+  .bg-gray-100 {
+    background: var(--bg-elevated) !important;
+  }
+
+  /* Progress bar dark mode */
+  .progress-bar {
+    background-color: #404040;
+  }
+
+  /* Skeleton dark mode */
+  .skeleton {
+    background: linear-gradient(90deg, #333 25%, #404040 50%, #333 75%);
+  }
+
+  /* Health gauge dark mode */
+  .health-gauge::before {
+    border-color: #404040;
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+  }
+
+  /* Status indicators dark mode */
+  .status-asset {
+    background-color: rgba(74, 222, 128, 0.15);
+  }
+
+  .status-liability {
+    background-color: rgba(248, 113, 113, 0.15);
+  }
+
+  .status-neutral {
+    background-color: rgba(251, 191, 36, 0.15);
+  }
+
+  /* Links and interactive elements */
+  a {
+    color: var(--color-progress);
+  }
+
+  /* Scrollbar styling for dark mode */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #525252;
   }
 }
 
