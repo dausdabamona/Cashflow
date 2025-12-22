@@ -1,7 +1,7 @@
 // Kiyosaki Finance Tracker - Dashboard Module
 
 /**
- * Load dashboard view
+ * Load dashboard view - using direct queries instead of RPC
  */
 async function loadDashboard() {
   const container = document.getElementById('dashboardView');
@@ -11,28 +11,94 @@ async function loadDashboard() {
     // Show loading skeleton
     container.innerHTML = getDashboardSkeleton();
 
-    // Fetch dashboard data
     const userId = currentUser?.id;
-    if (!userId) return;
+    if (!userId) {
+      console.log('No user ID found');
+      return;
+    }
 
-    const { data: summary, error } = await window.db.rpc('get_dashboard_summary', {
-      p_user_id: userId
-    });
+    // 1. Get accounts for total balance
+    const { data: accountsData, error: accError } = await window.db
+      .from('accounts')
+      .select('*')
+      .eq('user_id', userId);
 
-    if (error) throw error;
+    if (accError) throw accError;
 
-    // Fetch recent transactions
-    const { data: transactions, error: txError } = await window.db
+    // 2. Calculate month boundaries
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startDateStr = startOfMonth.toISOString().split('T')[0];
+
+    // 3. Get transactions for this month
+    const { data: monthTransactions, error: txError } = await window.db
       .from('transactions')
-      .select('*, account:accounts(name), category:categories(name, icon)')
+      .select('*, category:categories(name, icon, type, income_type)')
+      .eq('user_id', userId)
+      .eq('is_deleted', false)
+      .gte('date', startDateStr)
+      .order('date', { ascending: false });
+
+    if (txError) throw txError;
+
+    // 4. Get 5 recent transactions for display
+    const { data: recentTx, error: recentError } = await window.db
+      .from('transactions')
+      .select('*, category:categories(name, icon), account:accounts(name)')
+      .eq('user_id', userId)
       .eq('is_deleted', false)
       .order('date', { ascending: false })
       .limit(5);
 
-    if (txError) throw txError;
+    if (recentError) throw recentError;
 
-    // Render dashboard
-    container.innerHTML = renderDashboard(summary, transactions || []);
+    // 5. Calculate totals
+    const totalBalance = (accountsData || []).reduce((sum, acc) =>
+      sum + parseFloat(acc.balance || acc.current_balance || 0), 0);
+
+    const transactions = monthTransactions || [];
+
+    // Income and expense this month
+    const monthIncome = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+    const monthExpense = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+    // Passive income (from categories with income_type = 'passive')
+    const passiveIncome = transactions
+      .filter(t => t.type === 'income' && t.category?.income_type === 'passive')
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+    // For now, passive expense is considered as recurring expenses (simplified)
+    // In a more complete implementation, this would come from items/loans
+    const passiveExpense = monthExpense * 0.3; // Estimate 30% as passive/recurring
+
+    // 6. Calculate health score (simplified)
+    let healthScore = 50;
+    const savingsRate = monthIncome > 0 ? ((monthIncome - monthExpense) / monthIncome) * 100 : 0;
+
+    if (savingsRate >= 30) healthScore = 90;
+    else if (savingsRate >= 20) healthScore = 80;
+    else if (savingsRate >= 10) healthScore = 70;
+    else if (savingsRate >= 0) healthScore = 60;
+    else if (savingsRate >= -10) healthScore = 40;
+    else healthScore = 20;
+
+    // 7. Build summary object
+    const summary = {
+      total_balance: totalBalance,
+      month_income: monthIncome,
+      month_expense: monthExpense,
+      passive_income: passiveIncome,
+      passive_expense: passiveExpense,
+      health_score: healthScore
+    };
+
+    // 8. Render dashboard
+    container.innerHTML = renderDashboard(summary, recentTx || []);
     lucide.createIcons();
 
   } catch (error) {
@@ -41,6 +107,7 @@ async function loadDashboard() {
       <div class="card text-center py-8">
         <i data-lucide="alert-circle" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
         <p class="text-gray-500">Gagal memuat dashboard</p>
+        <p class="text-xs text-gray-400 mt-1">${error.message || 'Unknown error'}</p>
         <button onclick="loadDashboard()" class="btn btn-secondary mt-4">Coba Lagi</button>
       </div>
     `;
@@ -58,14 +125,14 @@ function renderDashboard(summary, transactions) {
   const monthExpense = data.month_expense || 0;
   const passiveIncome = data.passive_income || 0;
   const passiveExpense = data.passive_expense || 0;
-  const healthScore = data.health_score || 0;
+  const healthScore = data.health_score || 50;
 
   // Determine Kiyosaki status
   const netCashflow = passiveIncome - passiveExpense;
   const kiyosakiStatus = netCashflow >= 0 ? 'asset' : 'liability';
   const progressToAsset = passiveExpense > 0
     ? Math.min(100, Math.round((passiveIncome / passiveExpense) * 100))
-    : (passiveIncome > 0 ? 100 : 0);
+    : (passiveIncome > 0 ? 100 : 50);
 
   return `
     <!-- Kiyosaki Status Card -->
@@ -79,7 +146,7 @@ function renderDashboard(summary, transactions) {
 
       <div class="mb-3">
         <div class="progress-bar">
-          <div class="progress-fill ${kiyosakiStatus === 'asset' ? 'progress-fill-green' : 'progress-fill-yellow'}"
+          <div class="progress-fill ${kiyosakiStatus === 'asset' ? 'progress-fill-green' : 'progress-fill-yellow'} progress-animated"
                style="width: ${progressToAsset}%"></div>
         </div>
         <p class="text-sm mt-2 opacity-80">${getProgressMessage(kiyosakiStatus, progressToAsset)}</p>
@@ -115,7 +182,7 @@ function renderDashboard(summary, transactions) {
 
     <!-- Summary Cards -->
     <div class="card mb-4">
-      <h3 class="font-semibold text-gray-900 mb-4">Ringkasan</h3>
+      <h3 class="font-semibold text-gray-900 mb-4">Ringkasan Bulan Ini</h3>
 
       <div class="space-y-4">
         <div class="flex justify-between items-center">
@@ -133,7 +200,7 @@ function renderDashboard(summary, transactions) {
             <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
               <i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i>
             </div>
-            <span class="text-gray-600">Pemasukan Bulan Ini</span>
+            <span class="text-gray-600">Pemasukan</span>
           </div>
           <span class="font-semibold text-green-600">+${formatRupiahShort(monthIncome)}</span>
         </div>
@@ -143,7 +210,7 @@ function renderDashboard(summary, transactions) {
             <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
               <i data-lucide="trending-down" class="w-5 h-5 text-red-600"></i>
             </div>
-            <span class="text-gray-600">Pengeluaran Bulan Ini</span>
+            <span class="text-gray-600">Pengeluaran</span>
           </div>
           <span class="font-semibold text-red-600">-${formatRupiahShort(monthExpense)}</span>
         </div>
@@ -164,7 +231,7 @@ function renderDashboard(summary, transactions) {
         <span class="text-2xl font-bold ${getHealthScoreColor(healthScore)}">${healthScore}</span>
       </div>
       <div class="progress-bar">
-        <div class="progress-fill ${getHealthScoreBarColor(healthScore)}" style="width: ${healthScore}%"></div>
+        <div class="progress-fill ${getHealthScoreBarColor(healthScore)} progress-animated" style="width: ${healthScore}%"></div>
       </div>
       <p class="text-sm text-gray-500 mt-2">${getHealthScoreMessage(healthScore)}</p>
     </div>
@@ -173,7 +240,7 @@ function renderDashboard(summary, transactions) {
     <div class="card">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-semibold text-gray-900">Transaksi Terakhir</h3>
-        <button onclick="navigateTo('history')" class="text-blue-600 text-sm font-medium">Lihat Semua</button>
+        <button onclick="showView('history')" class="text-blue-600 text-sm font-medium">Lihat Semua</button>
       </div>
 
       ${transactions.length > 0 ? `
@@ -205,7 +272,7 @@ function renderTransactionItem(tx) {
       </div>
       <div class="flex-1 min-w-0">
         <p class="font-medium text-gray-900 truncate">${tx.description || categoryName}</p>
-        <p class="text-sm text-gray-500">${formatRelative(tx.date)} • ${tx.account?.name || 'Unknown'}</p>
+        <p class="text-sm text-gray-500">${formatRelative(tx.date)} • ${tx.account?.name || 'Akun'}</p>
       </div>
       <span class="font-semibold ${isIncome ? 'text-green-600' : 'text-red-600'}">
         ${isIncome ? '+' : '-'}${formatRupiahShort(tx.amount)}
@@ -272,20 +339,28 @@ function getHealthScoreMessage(score) {
  * Open quick expense modal
  */
 function openQuickExpense() {
-  document.getElementById('fabBtn')?.click();
-  setTimeout(() => {
-    document.getElementById('expenseTab')?.click();
-  }, 100);
+  if (typeof openTransactionModal === 'function') {
+    openTransactionModal('expense');
+  } else {
+    document.getElementById('fabBtn')?.click();
+    setTimeout(() => {
+      document.getElementById('expenseTab')?.click();
+    }, 100);
+  }
 }
 
 /**
  * Open quick income modal
  */
 function openQuickIncome() {
-  document.getElementById('fabBtn')?.click();
-  setTimeout(() => {
-    document.getElementById('incomeTab')?.click();
-  }, 100);
+  if (typeof openTransactionModal === 'function') {
+    openTransactionModal('income');
+  } else {
+    document.getElementById('fabBtn')?.click();
+    setTimeout(() => {
+      document.getElementById('incomeTab')?.click();
+    }, 100);
+  }
 }
 
 /**
