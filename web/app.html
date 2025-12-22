@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#3B82F6">
+  <meta name="description" content="Kiyosaki Finance Tracker - Ubah Liability jadi Asset">
+  <title>Kiyosaki Tracker</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 min-h-screen pb-20">
+
+  <!-- Loading Overlay -->
+  <div id="loading" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl p-6 flex flex-col items-center gap-3">
+      <div class="spinner"></div>
+      <span class="text-gray-600">Memproses...</span>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-20 left-4 right-4 transform translate-y-full opacity-0 z-50"></div>
+
+  <!-- Confirm Modal -->
+  <div id="confirmModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+      <p id="confirmMessage" class="text-gray-900 mb-6"></p>
+      <div class="flex gap-3">
+        <button id="confirmNo" class="btn btn-secondary flex-1">Batal</button>
+        <button id="confirmYes" class="btn btn-primary flex-1">Ya</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header id="appHeader" class="bg-white border-b border-gray-200 px-4 py-3 safe-area-top">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-500">Selamat datang</p>
+        <h1 id="userName" class="text-lg font-semibold text-gray-900">Loading...</h1>
+      </div>
+      <button id="settingsBtn" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+        <i data-lucide="settings" class="w-5 h-5 text-gray-600"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="mainContent" class="px-4 py-4 safe-area-bottom">
+    <!-- Dashboard View (default) -->
+    <div id="dashboardView"></div>
+
+    <!-- Stats View -->
+    <div id="statsView" class="hidden"></div>
+
+    <!-- History View -->
+    <div id="historyView" class="hidden"></div>
+
+    <!-- Settings View -->
+    <div id="settingsView" class="hidden"></div>
+
+    <!-- Report View -->
+    <div id="reportView" class="hidden"></div>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <div class="flex justify-around items-center py-2">
+      <button class="nav-item active" data-view="dashboard">
+        <i data-lucide="home" class="w-6 h-6"></i>
+        <span class="text-xs mt-1">Home</span>
+      </button>
+      <button class="nav-item" data-view="stats">
+        <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
+        <span class="text-xs mt-1">Stats</span>
+      </button>
+      <button id="fabBtn" class="fab -mt-6">
+        <i data-lucide="plus" class="w-7 h-7"></i>
+      </button>
+      <button class="nav-item" data-view="history">
+        <i data-lucide="list" class="w-6 h-6"></i>
+        <span class="text-xs mt-1">History</span>
+      </button>
+      <button class="nav-item" data-view="settings">
+        <i data-lucide="user" class="w-6 h-6"></i>
+        <span class="text-xs mt-1">Profile</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Transaction Modal Overlay -->
+  <div id="transactionOverlay" class="modal-overlay"></div>
+
+  <!-- Transaction Bottom Sheet -->
+  <div id="transactionSheet" class="bottom-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="px-4 pb-8 max-h-[80vh] overflow-y-auto">
+      <!-- Transaction Type Toggle -->
+      <div class="flex gap-2 mb-6">
+        <button id="expenseTab" class="flex-1 py-2 px-4 rounded-lg bg-red-100 text-red-700 font-medium transition-all">
+          <i data-lucide="arrow-up-circle" class="w-5 h-5 inline mr-1"></i>
+          Pengeluaran
+        </button>
+        <button id="incomeTab" class="flex-1 py-2 px-4 rounded-lg bg-gray-100 text-gray-600 font-medium transition-all">
+          <i data-lucide="arrow-down-circle" class="w-5 h-5 inline mr-1"></i>
+          Pemasukan
+        </button>
+      </div>
+
+      <!-- Amount Input -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah</label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
+          <input
+            type="text"
+            id="transactionAmount"
+            class="input-field input-field-lg pl-12"
+            placeholder="0"
+            inputmode="numeric"
+          >
+        </div>
+      </div>
+
+      <!-- Category Selection -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+        <div id="categoryList" class="flex flex-wrap gap-2">
+          <!-- Categories will be loaded dynamically -->
+        </div>
+      </div>
+
+      <!-- Account Selection -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Dari Akun</label>
+        <select id="transactionAccount" class="input-field">
+          <!-- Accounts will be loaded dynamically -->
+        </select>
+      </div>
+
+      <!-- Date -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+        <input type="date" id="transactionDate" class="input-field">
+      </div>
+
+      <!-- Description -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Catatan (opsional)</label>
+        <input
+          type="text"
+          id="transactionDescription"
+          class="input-field"
+          placeholder="Tambah catatan..."
+        >
+      </div>
+
+      <!-- Income Type (for income only) -->
+      <div id="incomeTypeSection" class="mb-6 hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Pemasukan</label>
+        <div class="flex gap-2">
+          <button class="income-type-btn flex-1 py-2 px-3 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-700 text-sm font-medium" data-type="active">
+            Aktif
+          </button>
+          <button class="income-type-btn flex-1 py-2 px-3 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-medium" data-type="passive">
+            Pasif
+          </button>
+          <button class="income-type-btn flex-1 py-2 px-3 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-medium" data-type="portfolio">
+            Portfolio
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button id="submitTransaction" class="btn btn-primary w-full py-3">
+        <i data-lucide="check" class="w-5 h-5"></i>
+        <span>Simpan</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Transfer Modal -->
+  <div id="transferModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Transfer Antar Akun</h3>
+        <button id="closeTransferModal" class="text-gray-400 hover:text-gray-600">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <form id="transferForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Dari Akun</label>
+          <select id="transferFrom" class="input-field" required>
+            <!-- Will be populated dynamically -->
+          </select>
+        </div>
+
+        <div class="flex justify-center">
+          <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+            <i data-lucide="arrow-down" class="w-5 h-5 text-gray-400"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Ke Akun</label>
+          <select id="transferTo" class="input-field" required>
+            <!-- Will be populated dynamically -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+            <input
+              type="text"
+              id="transferAmount"
+              class="input-field pl-12"
+              placeholder="0"
+              inputmode="numeric"
+              required
+            >
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+          <input type="text" id="transferDescription" class="input-field" placeholder="e.g., Top up e-wallet">
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full">
+          <i data-lucide="send" class="w-5 h-5"></i>
+          <span>Transfer</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/transaction.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/report.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Initialize app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

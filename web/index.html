@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#3B82F6">
+  <meta name="description" content="Kiyosaki Finance Tracker - Ubah Liability jadi Asset">
+  <title>Kiyosaki Tracker - Login</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+
+  <!-- Loading Overlay -->
+  <div id="loading" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl p-6 flex flex-col items-center gap-3">
+      <div class="spinner"></div>
+      <span class="text-gray-600">Memproses...</span>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-20 left-4 right-4 transform translate-y-full opacity-0 z-50"></div>
+
+  <!-- Main Container -->
+  <div class="w-full max-w-md">
+
+    <!-- Logo & Title -->
+    <div class="text-center mb-8">
+      <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <i data-lucide="wallet" class="w-10 h-10 text-white"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900">Kiyosaki Tracker</h1>
+      <p class="text-gray-500 mt-1">Ubah Liability jadi Asset</p>
+    </div>
+
+    <!-- Login Section -->
+    <div id="loginSection" class="card">
+      <h2 class="text-xl font-semibold text-gray-900 mb-6">Masuk</h2>
+
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label for="loginEmail" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            id="loginEmail"
+            class="input-field"
+            placeholder="nama@email.com"
+            required
+            autocomplete="email"
+          >
+        </div>
+
+        <div>
+          <label for="loginPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div class="relative">
+            <input
+              type="password"
+              id="loginPassword"
+              class="input-field pr-10"
+              placeholder="Masukkan password"
+              required
+              autocomplete="current-password"
+            >
+            <button type="button" id="toggleLoginPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <i data-lucide="eye" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-sm">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <span class="text-gray-600">Ingat saya</span>
+          </label>
+          <a href="#" id="forgotPassword" class="text-blue-600 hover:text-blue-700">Lupa password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full">
+          <i data-lucide="log-in" class="w-5 h-5"></i>
+          <span>Masuk</span>
+        </button>
+      </form>
+
+      <div class="mt-6 text-center text-sm text-gray-600">
+        Belum punya akun?
+        <a href="#" id="showRegister" class="text-blue-600 font-medium hover:text-blue-700">Daftar</a>
+      </div>
+    </div>
+
+    <!-- Register Section -->
+    <div id="registerSection" class="card hidden">
+      <h2 class="text-xl font-semibold text-gray-900 mb-6">Daftar</h2>
+
+      <form id="registerForm" class="space-y-4">
+        <div>
+          <label for="registerName" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+          <input
+            type="text"
+            id="registerName"
+            class="input-field"
+            placeholder="Nama lengkap"
+            required
+            autocomplete="name"
+          >
+        </div>
+
+        <div>
+          <label for="registerEmail" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            id="registerEmail"
+            class="input-field"
+            placeholder="nama@email.com"
+            required
+            autocomplete="email"
+          >
+        </div>
+
+        <div>
+          <label for="registerPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div class="relative">
+            <input
+              type="password"
+              id="registerPassword"
+              class="input-field pr-10"
+              placeholder="Minimal 6 karakter"
+              required
+              minlength="6"
+              autocomplete="new-password"
+            >
+            <button type="button" id="toggleRegisterPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <i data-lucide="eye" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label for="registerConfirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password</label>
+          <input
+            type="password"
+            id="registerConfirmPassword"
+            class="input-field"
+            placeholder="Ulangi password"
+            required
+            minlength="6"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full">
+          <i data-lucide="user-plus" class="w-5 h-5"></i>
+          <span>Daftar</span>
+        </button>
+      </form>
+
+      <div class="mt-6 text-center text-sm text-gray-600">
+        Sudah punya akun?
+        <a href="#" id="showLogin" class="text-blue-600 font-medium hover:text-blue-700">Masuk</a>
+      </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Reset Password</h3>
+        <p class="text-sm text-gray-600 mb-4">Masukkan email Anda untuk menerima link reset password.</p>
+        <form id="forgotPasswordForm">
+          <input
+            type="email"
+            id="forgotEmail"
+            class="input-field mb-4"
+            placeholder="nama@email.com"
+            required
+          >
+          <div class="flex gap-3">
+            <button type="button" id="closeForgotModal" class="btn btn-secondary flex-1">Batal</button>
+            <button type="submit" class="btn btn-primary flex-1">Kirim</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Toggle password visibility
+    function setupPasswordToggle(toggleId, inputId) {
+      const toggle = document.getElementById(toggleId);
+      const input = document.getElementById(inputId);
+      if (toggle && input) {
+        toggle.addEventListener('click', () => {
+          const type = input.type === 'password' ? 'text' : 'password';
+          input.type = type;
+          toggle.innerHTML = type === 'password'
+            ? '<i data-lucide="eye" class="w-5 h-5"></i>'
+            : '<i data-lucide="eye-off" class="w-5 h-5"></i>';
+          lucide.createIcons();
+        });
+      }
+    }
+
+    setupPasswordToggle('toggleLoginPassword', 'loginPassword');
+    setupPasswordToggle('toggleRegisterPassword', 'registerPassword');
+
+    // Forgot password modal
+    const forgotPasswordBtn = document.getElementById('forgotPassword');
+    const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+    const closeForgotModal = document.getElementById('closeForgotModal');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+
+    if (forgotPasswordBtn) {
+      forgotPasswordBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        forgotPasswordModal.classList.remove('hidden');
+      });
+    }
+
+    if (closeForgotModal) {
+      closeForgotModal.addEventListener('click', () => {
+        forgotPasswordModal.classList.add('hidden');
+      });
+    }
+
+    if (forgotPasswordForm) {
+      forgotPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('forgotEmail').value;
+        const result = await requestPasswordReset(email);
+        if (result.success) {
+          showToast('Link reset password telah dikirim ke email Anda', 'success');
+          forgotPasswordModal.classList.add('hidden');
+        } else {
+          showToast(result.error || 'Gagal mengirim email reset', 'error');
+        }
+      });
+    }
+
+    // Initialize auth page
+    initAuthPage();
+  </script>
+</body>
+</html>
