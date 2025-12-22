@@ -185,6 +185,40 @@
         >
       </div>
 
+      <!-- Non-consumable Item (for expense only) -->
+      <div id="itemPurchaseSection" class="mb-6 hidden">
+        <div class="flex items-center gap-3 mb-3">
+          <input type="checkbox" id="isItemPurchase" class="w-5 h-5 rounded border-gray-300 text-blue-500 focus:ring-blue-500">
+          <label for="isItemPurchase" class="text-sm font-medium text-gray-700">Ini pembelian barang (tidak habis pakai)</label>
+        </div>
+
+        <!-- Item Details (shown when checkbox is checked) -->
+        <div id="itemDetails" class="hidden space-y-4 pl-8 border-l-2 border-blue-200">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Barang</label>
+            <input type="text" id="itemName" class="input-field" placeholder="e.g., Laptop, Motor, dll">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Barang</label>
+            <select id="itemType" class="input-field">
+              <option value="vehicle">Kendaraan</option>
+              <option value="property">Properti</option>
+              <option value="electronics">Elektronik</option>
+              <option value="furniture">Furniture</option>
+              <option value="investment">Investasi</option>
+              <option value="other">Lainnya</option>
+            </select>
+          </div>
+          <p class="text-xs text-gray-500">
+            <i data-lucide="info" class="w-3 h-3 inline"></i>
+            Barang akan otomatis diklasifikasikan berdasarkan cashflow:
+            <br>• <strong>Aset</strong> - jika menghasilkan pendapatan lebih dari pengeluaran
+            <br>• <strong>Liabilitas</strong> - jika menyebabkan pengeluaran lebih dari pendapatan
+            <br>• <strong>Idle</strong> - jika belum ada transaksi terkait
+          </p>
+        </div>
+      </div>
+
       <!-- Income Type (for income only) -->
       <div id="incomeTypeSection" class="mb-6 hidden">
         <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Pemasukan</label>

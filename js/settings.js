@@ -1124,6 +1124,44 @@ async function deleteCategory(categoryId) {
 // ========================================
 
 /**
+ * Calculate cashflow for each item based on linked transactions
+ * Classifies items as: asset (income > expense), liability (expense > income), idle (no transactions)
+ */
+function calculateItemCashflow(transactions) {
+  const cashflow = {};
+
+  transactions.forEach(tx => {
+    if (!tx.item_id) return;
+
+    if (!cashflow[tx.item_id]) {
+      cashflow[tx.item_id] = { totalIncome: 0, totalExpense: 0 };
+    }
+
+    if (tx.type === 'income') {
+      cashflow[tx.item_id].totalIncome += tx.amount || 0;
+    } else if (tx.type === 'expense') {
+      cashflow[tx.item_id].totalExpense += tx.amount || 0;
+    }
+  });
+
+  // Calculate classification for each item
+  Object.keys(cashflow).forEach(itemId => {
+    const cf = cashflow[itemId];
+    cf.netCashflow = cf.totalIncome - cf.totalExpense;
+
+    if (cf.totalIncome === 0 && cf.totalExpense === 0) {
+      cf.classification = 'idle';
+    } else if (cf.totalIncome > cf.totalExpense) {
+      cf.classification = 'asset';
+    } else {
+      cf.classification = 'liability';
+    }
+  });
+
+  return cashflow;
+}
+
+/**
  * Open item manager
  */
 async function openItemManager() {
@@ -1142,6 +1180,16 @@ async function openItemManager() {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
+    // Get transactions linked to items (for cashflow calculation)
+    const { data: itemTransactions } = await window.db
+      .from('transactions')
+      .select('item_id, type, amount')
+      .eq('user_id', userId)
+      .not('item_id', 'is', null);
+
+    // Calculate cashflow per item
+    const itemCashflow = calculateItemCashflow(itemTransactions || []);
+
     // Get debt summary via RPC
     let debtSummary = { total_debt: 0, monthly_payment: 0 };
     try {
@@ -1152,7 +1200,7 @@ async function openItemManager() {
     if (itemsError) throw itemsError;
     hideLoading();
 
-    container.innerHTML = renderItemManager(itemsData || [], debtSummary);
+    container.innerHTML = renderItemManager(itemsData || [], debtSummary, itemCashflow);
     lucide.createIcons();
 
   } catch (error) {
@@ -1165,7 +1213,7 @@ async function openItemManager() {
 /**
  * Render item manager
  */
-function renderItemManager(items, debtSummary) {
+function renderItemManager(items, debtSummary, itemCashflow = {}) {
   return `
     <div class="flex items-center gap-3 mb-4">
       <button onclick="loadSettings()" class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
@@ -1212,27 +1260,70 @@ function renderItemManager(items, debtSummary) {
       ${items.map(item => {
         const hasLoan = item.loans && item.loans.length > 0;
         const activeLoan = hasLoan ? item.loans.find(l => l.remaining_balance > 0) : null;
-        const netCashflow = (item.monthly_income || 0) - (activeLoan?.monthly_payment || 0);
-        const status = netCashflow >= 0 ? 'asset' : 'liability';
+
+        // Get dynamic classification from transactions
+        const cf = itemCashflow[item.id] || { totalIncome: 0, totalExpense: 0, netCashflow: 0, classification: 'idle' };
+
+        // Override with loan-based calculation if there's an active loan
+        const loanExpense = activeLoan?.monthly_payment || 0;
+        const monthlyIncome = item.monthly_income || 0;
+        const netMonthly = monthlyIncome - loanExpense;
+
+        // Final classification: use transaction-based if available, otherwise use loan-based
+        let status = cf.classification;
+        if (cf.totalIncome === 0 && cf.totalExpense === 0) {
+          // No transactions yet, classify based on loan payments
+          if (loanExpense > 0 && monthlyIncome === 0) {
+            status = 'liability';
+          } else if (monthlyIncome > loanExpense) {
+            status = 'asset';
+          } else {
+            status = 'idle';
+          }
+        }
+
+        const statusLabels = {
+          'asset': 'ASET',
+          'liability': 'LIABILITAS',
+          'idle': 'IDLE'
+        };
+        const statusColors = {
+          'asset': 'bg-green-100 text-green-800',
+          'liability': 'bg-red-100 text-red-800',
+          'idle': 'bg-gray-100 text-gray-800'
+        };
+        const cardColors = {
+          'asset': 'status-asset',
+          'liability': 'status-liability',
+          'idle': ''
+        };
 
         return `
-          <div class="card ${status === 'asset' ? 'status-asset' : 'status-liability'}">
+          <div class="card ${cardColors[status]}">
             <div class="flex items-center justify-between mb-2">
               <h4 class="font-medium">${item.name}</h4>
-              <span class="px-2 py-1 rounded-full text-xs font-bold ${status === 'asset' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                ${status.toUpperCase()}
+              <span class="px-2 py-1 rounded-full text-xs font-bold ${statusColors[status]}">
+                ${statusLabels[status]}
               </span>
             </div>
             <div class="grid grid-cols-2 gap-2 text-sm mb-3">
               <div>
-                <p class="opacity-70">Nilai</p>
-                <p class="font-medium">${formatRupiahShort(item.current_value || item.purchase_price)}</p>
+                <p class="opacity-70">Nilai Beli</p>
+                <p class="font-medium">${formatRupiahShort(item.purchase_price || 0)}</p>
               </div>
               <div>
-                <p class="opacity-70">Net Cashflow</p>
-                <p class="font-medium ${netCashflow >= 0 ? 'text-green-700' : 'text-red-700'}">
-                  ${netCashflow >= 0 ? '+' : ''}${formatRupiahShort(netCashflow)}/bln
+                <p class="opacity-70">Cashflow Total</p>
+                <p class="font-medium ${cf.netCashflow >= 0 ? 'text-green-700' : 'text-red-700'}">
+                  ${cf.netCashflow >= 0 ? '+' : ''}${formatRupiahShort(cf.netCashflow)}
                 </p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-3">
+              <div>
+                <span class="text-green-600">↑ Pendapatan:</span> ${formatRupiahShort(cf.totalIncome)}
+              </div>
+              <div>
+                <span class="text-red-600">↓ Pengeluaran:</span> ${formatRupiahShort(cf.totalExpense)}
               </div>
             </div>
 

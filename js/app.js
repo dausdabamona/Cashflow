@@ -499,12 +499,17 @@ function setupTransactionModal() {
   }
 
   // Tab switching - Expense
+  const itemPurchaseSection = document.getElementById('itemPurchaseSection');
+  const itemPurchaseCheckbox = document.getElementById('isItemPurchase');
+  const itemDetails = document.getElementById('itemDetails');
+
   if (expenseTab) {
     expenseTab.addEventListener('click', () => {
       transactionType = 'expense';
       expenseTab.className = 'flex-1 py-2 px-4 rounded-lg bg-red-100 text-red-700 font-medium transition-all';
       incomeTab.className = 'flex-1 py-2 px-4 rounded-lg bg-gray-100 text-gray-600 font-medium transition-all';
       incomeTypeSection?.classList.add('hidden');
+      itemPurchaseSection?.classList.remove('hidden');
       loadCategoryChips('expense');
     });
   }
@@ -516,7 +521,29 @@ function setupTransactionModal() {
       incomeTab.className = 'flex-1 py-2 px-4 rounded-lg bg-green-100 text-green-700 font-medium transition-all';
       expenseTab.className = 'flex-1 py-2 px-4 rounded-lg bg-gray-100 text-gray-600 font-medium transition-all';
       incomeTypeSection?.classList.remove('hidden');
+      itemPurchaseSection?.classList.add('hidden');
+      // Reset item checkbox when switching to income
+      if (itemPurchaseCheckbox) itemPurchaseCheckbox.checked = false;
+      itemDetails?.classList.add('hidden');
       loadCategoryChips('income');
+    });
+  }
+
+  // Toggle item details when checkbox is clicked
+  if (itemPurchaseCheckbox) {
+    itemPurchaseCheckbox.addEventListener('change', () => {
+      if (itemPurchaseCheckbox.checked) {
+        itemDetails?.classList.remove('hidden');
+        // Pre-fill item name from description if available
+        const descInput = document.getElementById('transactionDescription');
+        const itemNameInput = document.getElementById('itemName');
+        if (descInput?.value && itemNameInput && !itemNameInput.value) {
+          itemNameInput.value = descInput.value;
+        }
+      } else {
+        itemDetails?.classList.add('hidden');
+      }
+      lucide.createIcons();
     });
   }
 
@@ -594,6 +621,14 @@ function openTransactionModal(type = 'expense') {
   if (descInput) descInput.value = '';
   selectedCategory = null;
 
+  // Reset item purchase fields
+  const itemPurchaseCheckbox = document.getElementById('isItemPurchase');
+  const itemDetails = document.getElementById('itemDetails');
+  const itemNameInput = document.getElementById('itemName');
+  if (itemPurchaseCheckbox) itemPurchaseCheckbox.checked = false;
+  itemDetails?.classList.add('hidden');
+  if (itemNameInput) itemNameInput.value = '';
+
   // Set tab state based on type
   if (type === 'income') {
     incomeTab?.click();
@@ -639,12 +674,29 @@ async function handleSubmitTransaction() {
     return;
   }
 
+  // Check if this is an item purchase
+  const isItemPurchase = document.getElementById('isItemPurchase')?.checked || false;
+  const itemName = document.getElementById('itemName')?.value?.trim() || '';
+  const itemType = document.getElementById('itemType')?.value || 'other';
+
+  // Validate item name if item purchase is checked
+  if (transactionType === 'expense' && isItemPurchase && !itemName) {
+    showToast('Masukkan nama barang', 'error');
+    return;
+  }
+
   try {
     showLoading();
 
     if (transactionType === 'expense') {
-      await submitExpense(amount, accountId, selectedCategory, date, description);
-      showToast('Pengeluaran tersimpan!', 'success');
+      if (isItemPurchase) {
+        // Use buy_item_cash which creates item AND records expense
+        await createItemWithExpense(amount, accountId, date, itemName, itemType, description);
+        showToast(`Barang "${itemName}" berhasil ditambahkan!`, 'success');
+      } else {
+        await submitExpense(amount, accountId, selectedCategory, date, description);
+        showToast('Pengeluaran tersimpan!', 'success');
+      }
     } else {
       await submitIncome(amount, accountId, selectedCategory, date, description, selectedIncomeType);
       showToast('Pemasukan tersimpan!', 'success');
@@ -661,6 +713,32 @@ async function handleSubmitTransaction() {
     console.error('Transaction error:', error);
     showToast(error.message || 'Gagal menyimpan transaksi', 'error');
   }
+}
+
+/**
+ * Create item with expense using buy_item_cash RPC
+ * Initial classification is 'idle' - will be calculated based on cashflow
+ */
+async function createItemWithExpense(amount, accountId, date, itemName, itemType, description) {
+  const userId = currentUser?.id;
+  if (!userId) throw new Error('User tidak terautentikasi');
+
+  // Build description with IDLE classification (will be calculated later)
+  const itemDescription = '[IDLE] ' + (description || 'Pembelian ' + itemName);
+
+  const { error } = await window.db.rpc('buy_item_cash', {
+    p_user_id: userId,
+    p_name: itemName,
+    p_type: itemType,
+    p_purchase_value: amount,
+    p_account_id: accountId,
+    p_description: itemDescription,
+    p_depreciation_method: 'none',
+    p_useful_life_months: 0,
+    p_date: date
+  });
+
+  if (error) throw error;
 }
 
 /**
