@@ -432,142 +432,150 @@ body {
 /* Dark Mode Support - Eye Comfort Theme */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Warm dark colors - easier on eyes */
-    --bg-primary: #1a1a1a;
-    --bg-card: #262626;
-    --bg-elevated: #2d2d2d;
-    --text-primary: #e8e6e3;
-    --text-secondary: #a8a29e;
+    /* Softer dark colors - easier on eyes */
+    --bg-primary: #121212;
+    --bg-card: #1e1e1e;
+    --bg-elevated: #2a2a2a;
+    --text-primary: #f5f5f5;
+    --text-secondary: #b0b0b0;
 
-    /* Reduced saturation status colors for dark mode */
+    /* Brighter status colors for dark mode visibility */
     --color-asset: #4ade80;
     --color-liability: #f87171;
     --color-neutral: #fbbf24;
     --color-progress: #60a5fa;
   }
 
-  body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+  /* Force all elements to inherit dark mode */
+  *, *::before, *::after {
+    border-color: #3a3a3a;
   }
 
-  .card {
-    background: var(--bg-card);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
-
-  .input-field {
-    background: var(--bg-elevated);
-    border-color: #404040;
-    color: var(--text-primary);
-  }
-
-  .input-field:focus {
-    border-color: var(--color-progress);
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-  }
-
-  .input-field::placeholder {
-    color: var(--text-secondary);
-  }
-
-  select.input-field option {
-    background: var(--bg-card);
-    color: var(--text-primary);
-  }
-
-  .category-chip {
-    background: var(--bg-elevated);
-    color: var(--text-primary);
-  }
-
-  .category-chip.selected {
-    background: rgba(96, 165, 250, 0.2);
-    border-color: var(--color-progress);
-  }
-
-  .btn-secondary {
-    background: var(--bg-elevated);
-    color: var(--text-primary);
-  }
-
-  .btn-secondary:hover {
-    background: #404040;
-  }
-
-  .btn-danger {
-    background: rgba(248, 113, 113, 0.2);
-    color: #fca5a5;
-  }
-
-  .btn-success {
-    background: rgba(74, 222, 128, 0.2);
-    color: #86efac;
-  }
-
-  .bottom-nav {
-    background: var(--bg-card);
-    border-color: #333333;
-  }
-
-  .bottom-sheet {
-    background: var(--bg-card);
-  }
-
-  .bottom-sheet-handle {
-    background: #525252;
-  }
-
-  .transaction-item:active {
-    background: var(--bg-elevated);
-  }
-
-  .modal-overlay {
-    background: rgba(0, 0, 0, 0.7);
-  }
-
-  /* Fix modal backgrounds */
-  .fixed.inset-0.bg-black\/50 {
-    background: rgba(0, 0, 0, 0.7);
-  }
-
-  .bg-white {
-    background: var(--bg-card) !important;
-  }
-
-  /* Text colors in dark mode */
-  .text-gray-900,
-  .text-gray-800,
-  .text-gray-700 {
+  html, body {
+    background-color: var(--bg-primary) !important;
     color: var(--text-primary) !important;
   }
 
-  .text-gray-600,
-  .text-gray-500,
-  .text-gray-400 {
+  .card {
+    background: var(--bg-card) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    color: var(--text-primary);
+  }
+
+  /* All headings and text */
+  h1, h2, h3, h4, h5, h6, p, span, label, div {
+    color: inherit;
+  }
+
+  .input-field, input, select, textarea {
+    background: var(--bg-elevated) !important;
+    border-color: #404040 !important;
+    color: var(--text-primary) !important;
+  }
+
+  .input-field:focus, input:focus, select:focus, textarea:focus {
+    border-color: var(--color-progress) !important;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  }
+
+  .input-field::placeholder, input::placeholder, textarea::placeholder {
     color: var(--text-secondary) !important;
   }
 
-  /* Border colors */
-  .border-gray-200,
-  .border-gray-100 {
-    border-color: #404040 !important;
+  select option {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
   }
 
-  /* Background colors */
-  .bg-gray-50,
-  .bg-gray-100 {
+  .category-chip {
+    background: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .category-chip.selected {
+    background: rgba(96, 165, 250, 0.3) !important;
+    border-color: var(--color-progress) !important;
+  }
+
+  /* Buttons */
+  .btn-secondary, button.bg-gray-100, button.bg-gray-200 {
+    background: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .btn-danger {
+    background: rgba(248, 113, 113, 0.25) !important;
+    color: #fca5a5 !important;
+  }
+
+  .btn-success {
+    background: rgba(74, 222, 128, 0.25) !important;
+    color: #86efac !important;
+  }
+
+  /* Navigation */
+  .bottom-nav, nav {
+    background: var(--bg-card) !important;
+    border-color: #333333 !important;
+  }
+
+  .nav-item {
+    color: var(--text-secondary) !important;
+  }
+
+  .nav-item.active {
+    color: var(--color-progress) !important;
+  }
+
+  /* Modals and sheets */
+  .bottom-sheet, [class*="modal"], [class*="Modal"] {
+    background: var(--bg-card) !important;
+  }
+
+  .bottom-sheet-handle {
+    background: #525252 !important;
+  }
+
+  .transaction-item:active {
     background: var(--bg-elevated) !important;
   }
 
+  .modal-overlay, [class*="bg-black"] {
+    background: rgba(0, 0, 0, 0.8) !important;
+  }
+
+  /* IMPORTANT: All white backgrounds to dark */
+  .bg-white, [class*="bg-white"] {
+    background: var(--bg-card) !important;
+  }
+
+  /* All gray text colors - make them visible */
+  .text-gray-900 { color: #f5f5f5 !important; }
+  .text-gray-800 { color: #e8e8e8 !important; }
+  .text-gray-700 { color: #d4d4d4 !important; }
+  .text-gray-600 { color: #b8b8b8 !important; }
+  .text-gray-500 { color: #a0a0a0 !important; }
+  .text-gray-400 { color: #888888 !important; }
+  .text-gray-300 { color: #707070 !important; }
+
+  /* All gray backgrounds */
+  .bg-gray-50 { background: #252525 !important; }
+  .bg-gray-100 { background: #2a2a2a !important; }
+  .bg-gray-200 { background: #333333 !important; }
+
+  /* Border colors */
+  .border-gray-100 { border-color: #333333 !important; }
+  .border-gray-200 { border-color: #404040 !important; }
+  .border-gray-300 { border-color: #4a4a4a !important; }
+
   /* Progress bar dark mode */
   .progress-bar {
-    background-color: #404040;
+    background-color: #404040 !important;
   }
 
   /* Skeleton dark mode */
   .skeleton {
-    background: linear-gradient(90deg, #333 25%, #404040 50%, #333 75%);
+    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%) !important;
   }
 
   /* Health gauge dark mode */
@@ -577,22 +585,50 @@ body {
     border-left-color: transparent;
   }
 
-  /* Status indicators dark mode */
+  /* Status indicators dark mode - with visible text */
   .status-asset {
-    background-color: rgba(74, 222, 128, 0.15);
+    background-color: rgba(74, 222, 128, 0.2) !important;
+    color: #86efac !important;
   }
 
   .status-liability {
-    background-color: rgba(248, 113, 113, 0.15);
+    background-color: rgba(248, 113, 113, 0.2) !important;
+    color: #fca5a5 !important;
   }
 
   .status-neutral {
-    background-color: rgba(251, 191, 36, 0.15);
+    background-color: rgba(251, 191, 36, 0.2) !important;
+    color: #fcd34d !important;
   }
 
   /* Links and interactive elements */
   a {
-    color: var(--color-progress);
+    color: var(--color-progress) !important;
+  }
+
+  /* Rounded elements with backgrounds */
+  .rounded-full.bg-blue-100,
+  .rounded-full.bg-green-100,
+  .rounded-full.bg-red-100,
+  .rounded-full.bg-yellow-100 {
+    background: var(--bg-elevated) !important;
+  }
+
+  /* Transaction icons backgrounds */
+  .transaction-icon, [class*="transaction-icon"] {
+    background: var(--bg-elevated) !important;
+  }
+
+  /* FAB button - keep it colorful */
+  .fab {
+    background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
+    color: white !important;
+  }
+
+  /* Header */
+  #appHeader, header {
+    background: var(--bg-card) !important;
+    border-color: #333333 !important;
   }
 
   /* Scrollbar styling for dark mode */
@@ -613,6 +649,12 @@ body {
   ::-webkit-scrollbar-thumb:hover {
     background: #525252;
   }
+
+  /* Fix specific colored text to remain visible */
+  .text-green-600, .text-green-700 { color: #4ade80 !important; }
+  .text-red-600, .text-red-700 { color: #f87171 !important; }
+  .text-blue-600, .text-blue-700 { color: #60a5fa !important; }
+  .text-yellow-600, .text-yellow-700 { color: #fbbf24 !important; }
 }
 
 /* Safe Area Padding for iOS */
