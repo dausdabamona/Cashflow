@@ -151,8 +151,7 @@ async function initDefaultData() {
       // Insert expense categories
       const expenseCategories = DEFAULT_EXPENSE_CATEGORIES.map(cat => ({
         ...cat,
-        user_id: userId,
-        is_default: true
+        user_id: userId
       }));
 
       const { error: expError } = await window.db
@@ -164,8 +163,7 @@ async function initDefaultData() {
       // Insert income categories
       const incomeCategories = DEFAULT_INCOME_CATEGORIES.map(cat => ({
         ...cat,
-        user_id: userId,
-        is_default: true
+        user_id: userId
       }));
 
       const { error: incError } = await window.db

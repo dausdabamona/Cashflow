@@ -1004,9 +1004,7 @@ async function saveCategory(event) {
           name,
           type,
           icon,
-          income_type: type === 'income' ? incomeType : null,
-          is_system: false,
-          created_at: new Date().toISOString()
+          income_type: type === 'income' ? incomeType : null
         });
       if (error) throw error;
     }

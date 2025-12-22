@@ -52,8 +52,7 @@ async function importInitialData() {
     console.log('Creating categories...');
     const allCategories = [...incomeCategories, ...expenseCategories].map(cat => ({
       ...cat,
-      user_id: userId,
-      is_default: true
+      user_id: userId
     }));
 
     const { error: catError } = await window.db.from('categories').insert(allCategories);
