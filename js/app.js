@@ -265,7 +265,7 @@ function populateAccountDropdowns() {
     const select = document.getElementById(id);
     if (select && accounts.length > 0) {
       select.innerHTML = accounts.map(acc =>
-        `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.balance || 0)})</option>`
+        `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.current_balance || 0)})</option>`
       ).join('');
     } else if (select) {
       select.innerHTML = '<option value="">Belum ada akun</option>';

@@ -316,8 +316,8 @@ function renderAccountManager(accountsList) {
             </div>
           </div>
           <div class="text-right">
-            <p class="font-semibold ${(acc.balance || 0) >= 0 ? 'text-gray-900' : 'text-red-600'}">
-              ${formatRupiah(acc.balance || 0)}
+            <p class="font-semibold ${(acc.current_balance || 0) >= 0 ? 'text-gray-900' : 'text-red-600'}">
+              ${formatRupiah(acc.current_balance || 0)}
             </p>
             <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 inline"></i>
           </div>
@@ -485,7 +485,7 @@ async function showEditAccountModal(accountId) {
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Saldo</label>
-                <input type="text" id="accountBalance" value="${(account.balance || 0).toLocaleString('id-ID')}"
+                <input type="text" id="accountBalance" value="${(account.current_balance || 0).toLocaleString('id-ID')}"
                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
                        oninput="this.value = this.value.replace(/\\D/g, '').replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.')">
               </div>
@@ -556,7 +556,7 @@ async function saveAccount(event) {
       // Update
       const { error } = await window.db
         .from('accounts')
-        .update({ name, type, balance, icon, updated_at: new Date().toISOString() })
+        .update({ name, type, current_balance: balance, icon, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
     } else {
@@ -567,7 +567,7 @@ async function saveAccount(event) {
           user_id: currentUser?.id,
           name,
           type,
-          balance,
+          current_balance: balance,
           icon,
           created_at: new Date().toISOString()
         });
@@ -1241,7 +1241,7 @@ function showAddItemCashModal() {
               <select id="itemCashAccount" required
                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
                 ${(window.accounts || []).map(acc =>
-                  `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.balance || 0)})</option>`
+                  `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.current_balance || 0)})</option>`
                 ).join('')}
               </select>
             </div>
@@ -1360,7 +1360,7 @@ function showAddItemCreditModal() {
               <select id="itemCreditAccount" required
                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
                 ${(window.accounts || []).map(acc =>
-                  `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.balance || 0)})</option>`
+                  `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.current_balance || 0)})</option>`
                 ).join('')}
               </select>
             </div>
@@ -1624,7 +1624,7 @@ async function showPayLoanModal(loanId) {
                 <select id="loanPayAccount" required
                         class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
                   ${(window.accounts || []).map(acc =>
-                    `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.balance || 0)})</option>`
+                    `<option value="${acc.id}">${acc.name} (${formatRupiahShort(acc.current_balance || 0)})</option>`
                   ).join('')}
                 </select>
               </div>

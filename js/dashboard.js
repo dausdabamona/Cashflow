@@ -41,9 +41,10 @@ async function loadDashboard() {
     if (txError) throw txError;
 
     // 4. Get 5 recent transactions for display
+    // Note: Using !account_id to specify which foreign key to use (avoid ambiguity with transfer_to_account_id)
     const { data: recentTx, error: recentError } = await window.db
       .from('transactions')
-      .select('*, category:categories(name, icon), account:accounts(name)')
+      .select('*, category:categories(name, icon), account:accounts!account_id(name)')
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .limit(5);
@@ -52,7 +53,7 @@ async function loadDashboard() {
 
     // 5. Calculate totals
     const totalBalance = (accountsData || []).reduce((sum, acc) =>
-      sum + parseFloat(acc.balance || acc.current_balance || 0), 0);
+      sum + parseFloat(acc.current_balance || 0), 0);
 
     const transactions = monthTransactions || [];
 
