@@ -533,6 +533,7 @@ async function showEditAccountModal(accountId) {
 
 /**
  * Save account (create or update)
+ * Note: current_balance is protected by database trigger - can only be changed via transactions
  */
 async function saveAccount(event) {
   event.preventDefault();
@@ -541,7 +542,7 @@ async function saveAccount(event) {
   const name = document.getElementById('accountName')?.value?.trim();
   const type = document.getElementById('accountType')?.value;
   const balanceStr = document.getElementById('accountBalance')?.value?.replace(/\D/g, '') || '0';
-  const balance = parseInt(balanceStr) || 0;
+  const initialBalance = parseInt(balanceStr) || 0;
   const icon = document.getElementById('accountIcon')?.value || '💵';
 
   if (!name) {
@@ -553,36 +554,106 @@ async function saveAccount(event) {
     showLoading();
 
     if (id) {
-      // Update
+      // Update - only update name, type, icon (NOT balance - protected by DB trigger)
       const { error } = await window.db
         .from('accounts')
-        .update({ name, type, current_balance: balance, icon })
+        .update({ name, type, icon })
         .eq('id', id);
       if (error) throw error;
+
+      hideLoading();
+      closeModal('accountModal');
+      showToast('Akun berhasil diperbarui', 'success');
     } else {
-      // Create
-      const { error } = await window.db
+      // Create new account with balance = 0
+      const { data: newAccount, error: createError } = await window.db
         .from('accounts')
         .insert({
           user_id: currentUser?.id,
           name,
           type,
-          current_balance: balance,
           icon
-        });
-      if (error) throw error;
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // If initial balance > 0, add it via record_income RPC
+      if (initialBalance > 0 && newAccount) {
+        // Get or create "Saldo Awal" category
+        let categoryId = await getOrCreateInitialBalanceCategory();
+
+        if (categoryId) {
+          const { error: incomeError } = await window.db.rpc('record_income', {
+            p_user_id: currentUser?.id,
+            p_amount: initialBalance,
+            p_account_id: newAccount.id,
+            p_category_id: categoryId,
+            p_date: new Date().toISOString().split('T')[0],
+            p_description: 'Saldo awal akun ' + name,
+            p_income_type: 'active',
+            p_item_id: null
+          });
+
+          if (incomeError) {
+            console.error('Failed to add initial balance:', incomeError);
+            showToast('Akun dibuat, tapi gagal menambahkan saldo awal', 'warning');
+          }
+        }
+      }
+
+      hideLoading();
+      closeModal('accountModal');
+      showToast('Akun berhasil ditambahkan' + (initialBalance > 0 ? ' dengan saldo awal' : ''), 'success');
     }
 
-    hideLoading();
-    closeModal('accountModal');
-    showToast(id ? 'Akun berhasil diperbarui' : 'Akun berhasil ditambahkan', 'success');
     await openAccountManager();
 
   } catch (error) {
     hideLoading();
     console.error('Save account error:', error);
-    showToast('Gagal menyimpan akun', 'error');
+    showToast('Gagal menyimpan akun: ' + (error.message || 'Unknown error'), 'error');
   }
+}
+
+/**
+ * Get or create "Saldo Awal" category for initial balance transactions
+ */
+async function getOrCreateInitialBalanceCategory() {
+  const userId = currentUser?.id;
+  if (!userId) return null;
+
+  // Try to find existing "Saldo Awal" category
+  const { data: existing } = await window.db
+    .from('categories')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('name', 'Saldo Awal')
+    .eq('type', 'income')
+    .single();
+
+  if (existing) return existing.id;
+
+  // Create new "Saldo Awal" category
+  const { data: newCat, error } = await window.db
+    .from('categories')
+    .insert({
+      user_id: userId,
+      name: 'Saldo Awal',
+      type: 'income',
+      income_type: 'active',
+      icon: '💰'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to create Saldo Awal category:', error);
+    return null;
+  }
+
+  return newCat?.id;
 }
 
 /**

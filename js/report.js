@@ -22,6 +22,17 @@ async function loadReport(date = null) {
     const startDate = getMonthStartDate(currentReportMonth);
     const endDate = getMonthEndDate(currentReportMonth);
 
+    // Helper function to safely call RPC with fallback
+    const safeRpc = async (name, params, fallback = {}) => {
+      try {
+        const result = await window.db.rpc(name, params);
+        return result;
+      } catch (err) {
+        console.warn(`RPC ${name} failed:`, err);
+        return { data: fallback };
+      }
+    };
+
     // Fetch all data in parallel
     const [
       summaryResult,
@@ -33,14 +44,14 @@ async function loadReport(date = null) {
       debtResult,
       recommendationsResult
     ] = await Promise.all([
-      window.db.rpc('get_dashboard_summary', { p_user_id: userId }),
-      window.db.rpc('get_balance_sheet', { p_user_id: userId }).catch(() => ({ data: {} })),
-      window.db.rpc('calculate_health_score', { p_user_id: userId, p_start_date: startDate, p_end_date: endDate }).catch(() => ({ data: {} })),
-      window.db.rpc('get_income_composition', { p_user_id: userId, p_start_date: startDate, p_end_date: endDate }).catch(() => ({ data: [] })),
-      window.db.rpc('get_expense_breakdown', { p_user_id: userId, p_start_date: startDate, p_end_date: endDate }).catch(() => ({ data: [] })),
-      window.db.rpc('get_items_with_status', { p_user_id: userId }).catch(() => ({ data: [] })),
-      window.db.rpc('get_debt_summary', { p_user_id: userId }).catch(() => ({ data: {} })),
-      window.db.rpc('generate_recommendations', { p_user_id: userId }).catch(() => ({ data: [] }))
+      safeRpc('get_dashboard_summary', { p_user_id: userId }, {}),
+      safeRpc('get_balance_sheet', { p_user_id: userId }, {}),
+      safeRpc('calculate_health_score', { p_user_id: userId, p_start_date: startDate, p_end_date: endDate }, {}),
+      safeRpc('get_income_composition', { p_user_id: userId, p_start_date: startDate, p_end_date: endDate }, []),
+      safeRpc('get_expense_breakdown', { p_user_id: userId, p_start_date: startDate, p_end_date: endDate }, []),
+      safeRpc('get_items_with_status', { p_user_id: userId }, []),
+      safeRpc('get_debt_summary', { p_user_id: userId }, {}),
+      safeRpc('generate_recommendations', { p_user_id: userId }, [])
     ]);
 
     const summary = summaryResult.data || {};

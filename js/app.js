@@ -775,6 +775,7 @@ function setupTransferModal() {
   const closeBtn = document.getElementById('closeTransferModal');
   const form = document.getElementById('transferForm');
   const amountInput = document.getElementById('transferAmount');
+  const feeInput = document.getElementById('transferFee');
 
   // Close modal
   if (closeBtn) {
@@ -786,6 +787,16 @@ function setupTransferModal() {
   // Format amount input
   if (amountInput) {
     amountInput.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value) {
+        e.target.value = parseInt(value).toLocaleString('id-ID');
+      }
+    });
+  }
+
+  // Format fee input
+  if (feeInput) {
+    feeInput.addEventListener('input', (e) => {
       let value = e.target.value.replace(/\D/g, '');
       if (value) {
         e.target.value = parseInt(value).toLocaleString('id-ID');
@@ -808,7 +819,9 @@ async function handleSubmitTransfer(e) {
   const fromAccountId = document.getElementById('transferFrom')?.value;
   const toAccountId = document.getElementById('transferTo')?.value;
   const amountInput = document.getElementById('transferAmount');
+  const feeInput = document.getElementById('transferFee');
   const amount = parseInt(amountInput?.value.replace(/\D/g, '')) || 0;
+  const fee = parseInt(feeInput?.value.replace(/\D/g, '')) || 0;
   const description = document.getElementById('transferDescription')?.value || '';
 
   // Validation
@@ -824,10 +837,30 @@ async function handleSubmitTransfer(e) {
 
   try {
     showLoading();
+
+    // 1. Process the transfer
     await submitTransfer(fromAccountId, toAccountId, amount, description);
+
+    // 2. If there's a transfer fee, record it as an expense
+    if (fee > 0) {
+      const feeCategoryId = await getOrCreateTransferFeeCategory();
+      if (feeCategoryId) {
+        await window.db.rpc('record_expense', {
+          p_user_id: currentUser?.id,
+          p_amount: fee,
+          p_account_id: fromAccountId,
+          p_category_id: feeCategoryId,
+          p_date: getToday(),
+          p_description: 'Biaya transfer' + (description ? ': ' + description : ''),
+          p_item_id: null
+        });
+      }
+    }
+
     hideLoading();
 
-    showToast('Transfer berhasil!', 'success');
+    const feeMsg = fee > 0 ? ` (+ biaya Rp ${fee.toLocaleString('id-ID')})` : '';
+    showToast('Transfer berhasil!' + feeMsg, 'success');
     hideModal('transferModal');
 
     // Refresh data
@@ -841,13 +874,53 @@ async function handleSubmitTransfer(e) {
 }
 
 /**
+ * Get or create "Biaya Transfer" expense category
+ */
+async function getOrCreateTransferFeeCategory() {
+  const userId = currentUser?.id;
+  if (!userId) return null;
+
+  // Try to find existing "Biaya Transfer" category
+  const { data: existing } = await window.db
+    .from('categories')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('name', 'Biaya Transfer')
+    .eq('type', 'expense')
+    .single();
+
+  if (existing) return existing.id;
+
+  // Create new "Biaya Transfer" category
+  const { data: newCat, error } = await window.db
+    .from('categories')
+    .insert({
+      user_id: userId,
+      name: 'Biaya Transfer',
+      type: 'expense',
+      icon: '💸'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to create Biaya Transfer category:', error);
+    return null;
+  }
+
+  return newCat?.id;
+}
+
+/**
  * Open transfer modal
  */
 function openTransferModal() {
   const amountInput = document.getElementById('transferAmount');
+  const feeInput = document.getElementById('transferFee');
   const descInput = document.getElementById('transferDescription');
 
   if (amountInput) amountInput.value = '';
+  if (feeInput) feeInput.value = '';
   if (descInput) descInput.value = '';
 
   populateAccountDropdowns();
