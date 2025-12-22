@@ -1,7 +1,7 @@
 // Cashflow Tracker - Service Worker
-const CACHE_NAME = 'cashflow-tracker-v9';
-const STATIC_CACHE = 'cashflow-static-v9';
-const DYNAMIC_CACHE = 'cashflow-dynamic-v9';
+const CACHE_NAME = 'cashflow-tracker-v10';
+const STATIC_CACHE = 'cashflow-static-v10';
+const DYNAMIC_CACHE = 'cashflow-dynamic-v10';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -18,6 +18,7 @@ const STATIC_ASSETS = [
   '/js/settings.js',
   '/js/report.js',
   '/js/gamification.js',
+  '/js/ocr.js',
   '/manifest.json'
 ];
 
@@ -25,7 +26,8 @@ const STATIC_ASSETS = [
 const CDN_ASSETS = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest',
-  'https://cdn.jsdelivr.net/npm/chart.js'
+  'https://cdn.jsdelivr.net/npm/chart.js',
+  'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'
 ];
 
 // Install event - cache static assets

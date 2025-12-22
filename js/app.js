@@ -88,6 +88,11 @@ async function initApp() {
   // Setup transaction modal
   setupTransactionModal();
 
+  // Setup OCR scanning
+  if (typeof initOCR === 'function') {
+    initOCR();
+  }
+
   // Setup transfer modal
   setupTransferModal();
 
@@ -748,6 +753,10 @@ async function submitExpense(amount, accountId, categoryId, date, description) {
   const userId = currentUser?.id;
   if (!userId) throw new Error('User tidak terautentikasi');
 
+  // Check if there's a pending receipt from OCR
+  const receiptUrl = window.pendingReceiptUrl || null;
+  window.pendingReceiptUrl = null; // Clear after use
+
   const { data, error } = await window.db.rpc('record_expense', {
     p_user_id: userId,
     p_amount: amount,
@@ -759,6 +768,20 @@ async function submitExpense(amount, accountId, categoryId, date, description) {
   });
 
   if (error) throw error;
+
+  // If we have a receipt URL and got a transaction ID, update the transaction
+  if (receiptUrl && data) {
+    try {
+      await window.db
+        .from('transactions')
+        .update({ receipt_url: receiptUrl })
+        .eq('id', data);
+    } catch (e) {
+      // If receipt_url column doesn't exist, store in metadata or ignore
+      console.log('Could not save receipt URL:', e.message);
+    }
+  }
+
   return data;
 }
 

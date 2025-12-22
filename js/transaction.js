@@ -193,6 +193,7 @@ function renderHistoryItem(tx) {
   const isTransfer = tx.type === 'transfer';
   const icon = isTransfer ? '🔄' : (tx.category?.icon || (isIncome ? '💰' : '💸'));
   const categoryName = isTransfer ? 'Transfer' : (tx.category?.name || 'Lainnya');
+  const hasReceipt = tx.receipt_url && tx.receipt_url.length > 0;
 
   return `
     <div class="transaction-item" onclick="showTransactionDetail('${tx.id}')">
@@ -200,7 +201,14 @@ function renderHistoryItem(tx) {
         <span class="text-lg">${icon}</span>
       </div>
       <div class="flex-1 min-w-0">
-        <p class="font-medium text-gray-900 truncate">${tx.description || categoryName}</p>
+        <div class="flex items-center gap-1">
+          <p class="font-medium text-gray-900 truncate">${tx.description || categoryName}</p>
+          ${hasReceipt ? `
+            <button onclick="event.stopPropagation(); viewReceiptImage('${tx.receipt_url}')" class="text-blue-500 hover:text-blue-700" title="Lihat struk">
+              <i data-lucide="receipt" class="w-4 h-4"></i>
+            </button>
+          ` : ''}
+        </div>
         <p class="text-xs text-gray-500">${tx.account?.name || 'Unknown'}</p>
       </div>
       <div class="text-right">
