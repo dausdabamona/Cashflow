@@ -400,8 +400,153 @@ async function showView(name) {
   lucide.createIcons();
 }
 
-// Alias for backward compatibility
-const navigateTo = showView;
+// Page routes configuration
+const ROUTES = {
+  dashboard: { view: 'dashboardView' },
+  stats: { view: 'statsView' },
+  history: { view: 'historyView' },
+  settings: { view: 'settingsView' },
+  report: { view: 'reportView' },
+  // Dynamic pages rendered to mainContent
+  recurring: { page: 'RecurringPage' },
+  budget: { page: 'BudgetPage' },
+  reminders: { page: 'ReminderPage' },
+  scan: { page: 'ScanPage' },
+  'import-export': { page: 'ImportExportPage' }
+};
+
+/**
+ * Navigate to a page/view
+ * @param {string} name - Route name
+ */
+async function navigateTo(name) {
+  const route = ROUTES[name];
+
+  if (!route) {
+    console.warn(`Route not found: ${name}`);
+    return;
+  }
+
+  currentView = name;
+
+  // Get main content container for dynamic pages
+  const mainContent = document.getElementById('mainContent');
+
+  // If it's a static view (has view property)
+  if (route.view) {
+    // Show mainContent if hidden
+    if (mainContent) mainContent.classList.remove('hidden');
+
+    // Use existing showView logic
+    await showView(name);
+    return;
+  }
+
+  // If it's a dynamic page (has page property)
+  if (route.page && mainContent) {
+    // Hide all static views
+    const views = ['dashboard', 'stats', 'history', 'settings', 'report'];
+    views.forEach(v => {
+      const el = document.getElementById(`${v}View`);
+      if (el) el.classList.add('hidden');
+    });
+
+    // Get the page component
+    const PageComponent = window[route.page];
+
+    if (PageComponent && typeof PageComponent.render === 'function') {
+      // Clear main content and render page
+      mainContent.innerHTML = '';
+      mainContent.classList.remove('hidden');
+
+      try {
+        await PageComponent.render(mainContent);
+      } catch (error) {
+        ErrorHandler?.handle(error, `navigateTo.${name}`) || console.error(`Error rendering ${name}:`, error);
+        mainContent.innerHTML = `
+          <div class="p-4 text-center">
+            <p class="text-red-500">Gagal memuat halaman</p>
+            <button onclick="navigateTo('dashboard')" class="mt-2 text-blue-500">Kembali ke Dashboard</button>
+          </div>
+        `;
+      }
+    } else {
+      console.warn(`Page component not found: ${route.page}`);
+      mainContent.innerHTML = `
+        <div class="p-4 text-center">
+          <p class="text-gray-500">Halaman belum tersedia</p>
+          <button onclick="navigateTo('dashboard')" class="mt-2 text-blue-500">Kembali ke Dashboard</button>
+        </div>
+      `;
+    }
+
+    // Update nav items (remove active from all)
+    document.querySelectorAll('.nav-item[data-view]').forEach(nav => {
+      nav.classList.remove('active');
+    });
+
+    lucide.createIcons();
+  }
+}
+
+/**
+ * Show tools menu modal
+ */
+function showToolsMenu() {
+  const menuItems = [
+    { icon: '🔄', name: 'Transaksi Rutin', page: 'recurring', desc: 'Kelola pemasukan & pengeluaran berulang' },
+    { icon: '💰', name: 'Budget', page: 'budget', desc: 'Atur budget per kategori' },
+    { icon: '⏰', name: 'Pengingat', page: 'reminders', desc: 'Pengingat tagihan & pembayaran' },
+    { icon: '📸', name: 'Scan Struk', page: 'scan', desc: 'Scan struk dengan OCR' },
+    { icon: '📊', name: 'Import/Export', page: 'import-export', desc: 'Import & export data' }
+  ];
+
+  const menuHtml = menuItems.map(item => `
+    <button onclick="navigateTo('${item.page}'); hideModal('toolsMenu');"
+            class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left">
+      <span class="text-2xl">${item.icon}</span>
+      <div>
+        <p class="font-medium text-gray-800 dark:text-white">${item.name}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">${item.desc}</p>
+      </div>
+    </button>
+  `).join('');
+
+  // Check if modal already exists
+  let modal = document.getElementById('toolsMenu');
+
+  if (!modal) {
+    // Create modal
+    modal = document.createElement('div');
+    modal.id = 'toolsMenu';
+    modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-end justify-center hidden';
+    modal.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-t-2xl p-4 pb-8 animate-slide-up">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-gray-800 dark:text-white">Tools & Fitur</h3>
+          <button onclick="hideModal('toolsMenu')" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+            <span class="text-xl">✕</span>
+          </button>
+        </div>
+        <div id="toolsMenuContent" class="space-y-2">
+          ${menuHtml}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) hideModal('toolsMenu');
+    });
+  } else {
+    // Update content
+    const content = modal.querySelector('#toolsMenuContent');
+    if (content) content.innerHTML = menuHtml;
+  }
+
+  showModal('toolsMenu');
+}
 
 /**
  * Show a modal by ID
@@ -1108,3 +1253,5 @@ window.submitIncome = submitIncome;
 window.submitTransfer = submitTransfer;
 window.onSuccess = onSuccess;
 window.getToday = getToday;
+window.showToolsMenu = showToolsMenu;
+window.ROUTES = ROUTES;

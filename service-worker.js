@@ -1,7 +1,7 @@
 // Cashflow Tracker - Service Worker
-const CACHE_NAME = 'cashflow-tracker-v18';
-const STATIC_CACHE = 'cashflow-static-v18';
-const DYNAMIC_CACHE = 'cashflow-dynamic-v18';
+const CACHE_NAME = 'cashflow-tracker-v19';
+const STATIC_CACHE = 'cashflow-static-v19';
+const DYNAMIC_CACHE = 'cashflow-dynamic-v19';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -38,6 +38,12 @@ const STATIC_ASSETS = [
   '/js/components/transactionItem.js',
   '/js/components/budgetWidget.js',
   '/js/components/reminderWidget.js',
+  // Pages
+  '/js/pages/recurringPage.js',
+  '/js/pages/budgetPage.js',
+  '/js/pages/reminderPage.js',
+  '/js/pages/scanPage.js',
+  '/js/pages/importExportPage.js',
   // App modules
   '/js/config.js',
   '/js/utils.js',
