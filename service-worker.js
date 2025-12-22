@@ -1,7 +1,7 @@
 // Cashflow Tracker - Service Worker
-const CACHE_NAME = 'cashflow-tracker-v11';
-const STATIC_CACHE = 'cashflow-static-v11';
-const DYNAMIC_CACHE = 'cashflow-dynamic-v11';
+const CACHE_NAME = 'cashflow-tracker-v12';
+const STATIC_CACHE = 'cashflow-static-v12';
+const DYNAMIC_CACHE = 'cashflow-dynamic-v12';
 
 // Static assets to cache
 const STATIC_ASSETS = [
