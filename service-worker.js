@@ -1,7 +1,7 @@
 // Kiyosaki Finance Tracker - Service Worker
-const CACHE_NAME = 'kiyosaki-tracker-v4';
-const STATIC_CACHE = 'kiyosaki-static-v4';
-const DYNAMIC_CACHE = 'kiyosaki-dynamic-v4';
+const CACHE_NAME = 'kiyosaki-tracker-v5';
+const STATIC_CACHE = 'kiyosaki-static-v5';
+const DYNAMIC_CACHE = 'kiyosaki-dynamic-v5';
 
 // Static assets to cache
 const STATIC_ASSETS = [

@@ -1295,17 +1295,64 @@ function showAddItemCashModal() {
               <label class="block text-sm font-medium text-gray-700 mb-1">Nama Item</label>
               <input type="text" id="itemCashName" required
                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
-                     placeholder="Contoh: Rumah, Mobil, Laptop">
+                     placeholder="Contoh: Rumah Kos, Laptop, Makanan">
+            </div>
+
+            <!-- Consumable Toggle -->
+            <div class="bg-gray-50 p-4 rounded-xl">
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="text-sm font-medium text-gray-700">Barang Habis Pakai</span>
+                  <p class="text-xs text-gray-500">Centang jika barang akan habis/dikonsumsi</p>
+                </div>
+                <input type="checkbox" id="itemCashConsumable" onchange="toggleItemCashClassification()"
+                       class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+              </label>
+            </div>
+
+            <!-- Non-consumable Classification (shown when NOT consumable) -->
+            <div id="itemCashClassificationSection">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Klasifikasi Kiyosaki</label>
+              <div class="grid grid-cols-3 gap-2">
+                <label class="relative">
+                  <input type="radio" name="itemCashClassification" value="asset" class="peer sr-only" checked>
+                  <div class="p-3 text-center border-2 rounded-xl cursor-pointer transition-all
+                              peer-checked:border-green-500 peer-checked:bg-green-50 border-gray-200">
+                    <span class="text-2xl block mb-1">💰</span>
+                    <span class="text-xs font-medium text-gray-700">Aset</span>
+                    <p class="text-[10px] text-gray-500">Menghasilkan uang</p>
+                  </div>
+                </label>
+                <label class="relative">
+                  <input type="radio" name="itemCashClassification" value="liability" class="peer sr-only">
+                  <div class="p-3 text-center border-2 rounded-xl cursor-pointer transition-all
+                              peer-checked:border-red-500 peer-checked:bg-red-50 border-gray-200">
+                    <span class="text-2xl block mb-1">💸</span>
+                    <span class="text-xs font-medium text-gray-700">Liabilitas</span>
+                    <p class="text-[10px] text-gray-500">Menyedot uang</p>
+                  </div>
+                </label>
+                <label class="relative">
+                  <input type="radio" name="itemCashClassification" value="idle" class="peer sr-only">
+                  <div class="p-3 text-center border-2 rounded-xl cursor-pointer transition-all
+                              peer-checked:border-gray-500 peer-checked:bg-gray-100 border-gray-200">
+                    <span class="text-2xl block mb-1">😴</span>
+                    <span class="text-xs font-medium text-gray-700">Idle</span>
+                    <p class="text-[10px] text-gray-500">Tidak produktif</p>
+                  </div>
+                </label>
+              </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tipe Aset</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Tipe Barang</label>
               <select id="itemCashType" required
                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
                 <option value="property">Properti (Rumah, Tanah)</option>
                 <option value="vehicle">Kendaraan</option>
                 <option value="equipment">Peralatan</option>
                 <option value="investment">Investasi</option>
+                <option value="consumable">Barang Konsumsi</option>
                 <option value="other">Lainnya</option>
               </select>
             </div>
@@ -1335,7 +1382,8 @@ function showAddItemCashModal() {
                      placeholder="Contoh: Penghasilan bulanan Rp 5jt">
             </div>
 
-            <div>
+            <!-- Only show for non-consumables -->
+            <div id="itemCashUsefulLifeSection">
               <label class="block text-sm font-medium text-gray-700 mb-1">Umur Pakai (bulan, opsional)</label>
               <input type="number" id="itemCashUsefulLife"
                      class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
@@ -1362,22 +1410,67 @@ function showAddItemCashModal() {
 }
 
 /**
+ * Toggle classification section based on consumable checkbox
+ */
+function toggleItemCashClassification() {
+  const isConsumable = document.getElementById('itemCashConsumable')?.checked;
+  const classificationSection = document.getElementById('itemCashClassificationSection');
+  const usefulLifeSection = document.getElementById('itemCashUsefulLifeSection');
+  const typeSelect = document.getElementById('itemCashType');
+
+  if (isConsumable) {
+    // Hide classification for consumables
+    if (classificationSection) classificationSection.style.display = 'none';
+    if (usefulLifeSection) usefulLifeSection.style.display = 'none';
+    // Auto-select consumable type
+    if (typeSelect) typeSelect.value = 'consumable';
+  } else {
+    // Show classification for non-consumables
+    if (classificationSection) classificationSection.style.display = 'block';
+    if (usefulLifeSection) usefulLifeSection.style.display = 'block';
+    // Reset type if it was consumable
+    if (typeSelect && typeSelect.value === 'consumable') {
+      typeSelect.value = 'other';
+    }
+  }
+}
+
+/**
  * Save item purchased with cash
  */
 async function saveItemCash(event) {
   event.preventDefault();
 
   const name = document.getElementById('itemCashName')?.value?.trim();
+  const isConsumable = document.getElementById('itemCashConsumable')?.checked || false;
+  const classification = document.querySelector('input[name="itemCashClassification"]:checked')?.value || 'asset';
   const type = document.getElementById('itemCashType')?.value || 'other';
   const priceStr = document.getElementById('itemCashPrice')?.value?.replace(/\D/g, '') || '0';
   const purchaseValue = parseInt(priceStr) || 0;
   const accountId = document.getElementById('itemCashAccount')?.value;
-  const description = document.getElementById('itemCashDescription')?.value?.trim() || null;
-  const usefulLifeMonths = parseInt(document.getElementById('itemCashUsefulLife')?.value) || 0;
+  const userDescription = document.getElementById('itemCashDescription')?.value?.trim() || '';
+  const usefulLifeMonths = isConsumable ? 0 : (parseInt(document.getElementById('itemCashUsefulLife')?.value) || 0);
 
   if (!name || !purchaseValue || !accountId) {
     showToast('Lengkapi semua data wajib', 'error');
     return;
+  }
+
+  // Build description with classification info
+  const classificationLabels = {
+    'asset': '[ASET]',
+    'liability': '[LIABILITAS]',
+    'idle': '[IDLE]'
+  };
+
+  let description = '';
+  if (isConsumable) {
+    description = '[HABIS PAKAI]';
+  } else {
+    description = classificationLabels[classification] || '[ASET]';
+  }
+  if (userDescription) {
+    description += ' ' + userDescription;
   }
 
   try {
@@ -1386,7 +1479,7 @@ async function saveItemCash(event) {
     const { error } = await window.db.rpc('buy_item_cash', {
       p_user_id: currentUser?.id,
       p_name: name,
-      p_type: type,
+      p_type: isConsumable ? 'consumable' : type,
       p_purchase_value: purchaseValue,
       p_account_id: accountId,
       p_description: description,
@@ -1399,7 +1492,11 @@ async function saveItemCash(event) {
 
     hideLoading();
     closeModal('itemCashModal');
-    showToast('Item berhasil ditambahkan', 'success');
+
+    const classMsg = isConsumable ? 'Barang habis pakai' :
+                     classification === 'asset' ? 'Aset' :
+                     classification === 'liability' ? 'Liabilitas' : 'Item idle';
+    showToast(`${classMsg} berhasil ditambahkan`, 'success');
     await openItemManager();
 
   } catch (error) {
