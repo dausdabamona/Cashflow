@@ -79,15 +79,27 @@ async function loadHistory(page = 0) {
     const userId = currentUser?.id;
     if (!userId) return;
 
-    // Fetch transactions
+    // Fetch transactions (without account embed to avoid relationship ambiguity)
     const { data: transactions, error, count } = await window.db
       .from('transactions')
-      .select('*, account:accounts(name), category:categories(name, icon)', { count: 'exact' })
+      .select('*, category:categories(name, icon)', { count: 'exact' })
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .range(offset, offset + pageSize - 1);
 
     if (error) throw error;
+
+    // Get accounts to map names
+    const { data: accountsData } = await window.db
+      .from('accounts')
+      .select('id, name')
+      .eq('user_id', userId);
+
+    const accountMap = {};
+    (accountsData || []).forEach(acc => { accountMap[acc.id] = acc.name; });
+    (transactions || []).forEach(tx => {
+      tx.account = { name: accountMap[tx.account_id] || 'Unknown' };
+    });
 
     container.innerHTML = renderHistory(transactions || [], page, count || 0, pageSize);
     lucide.createIcons();
