@@ -60,28 +60,38 @@ async function importInitialData() {
     console.log('✅ Categories created:', allCategories.length);
 
     // =============================================
-    // STEP 3: Create Cash Account
+    // STEP 3: Create Accounts (from Excel data)
     // =============================================
-    console.log('Creating Cash account...');
+    console.log('Creating accounts...');
 
     // Delete existing accounts first
     await window.db.from('accounts').delete().eq('user_id', userId);
 
-    const { data: accountData, error: accError } = await window.db
-      .from('accounts')
-      .insert({
-        user_id: userId,
-        name: 'Cash',
-        type: 'cash',
-        icon: '💵',
-        current_balance: 805365
-      })
-      .select()
-      .single();
+    // Account data from Excel
+    const accountsData = [
+      { name: 'Cash', type: 'cash', icon: '💵', current_balance: 805365 },
+      { name: 'Bank Mandiri', type: 'bank', icon: '🏦', current_balance: 0 },
+      { name: 'Bank BCA', type: 'bank', icon: '💳', current_balance: 0 },
+      { name: 'GoPay', type: 'ewallet', icon: '📱', current_balance: 0 },
+      { name: 'OVO', type: 'ewallet', icon: '💜', current_balance: 0 },
+      { name: 'Dana', type: 'ewallet', icon: '💙', current_balance: 0 }
+    ];
 
-    if (accError) throw new Error('Failed to create account: ' + accError.message);
-    const accountId = accountData.id;
-    console.log('✅ Account created:', accountData.name, 'ID:', accountId);
+    const { data: insertedAccounts, error: accError } = await window.db
+      .from('accounts')
+      .insert(accountsData.map(acc => ({ ...acc, user_id: userId })))
+      .select();
+
+    if (accError) throw new Error('Failed to create accounts: ' + accError.message);
+
+    // Create account map for easy lookup
+    const accMap = {};
+    insertedAccounts.forEach(acc => accMap[acc.name] = acc);
+    console.log('✅ Accounts created:', insertedAccounts.length);
+
+    // Default account for transactions (Cash)
+    const defaultAccountId = accMap['Cash'].id;
+    const bankMandiriId = accMap['Bank Mandiri'].id;
 
     // =============================================
     // STEP 4: Get Category ID Map
@@ -97,46 +107,48 @@ async function importInitialData() {
 
     // =============================================
     // STEP 5: Transaction Data from Excel
+    // Account: 'Bank Mandiri' for salary/income and bank transactions
+    // Account: 'Cash' for daily expenses
     // =============================================
     const transactions = [
       // May 2025
-      { date: '2025-05-01', desc: 'Gaji', category: 'Gaji', amount: 4993400, type: 'income' },
-      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 60000, type: 'expense' },
-      { date: '2025-05-09', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 500000, type: 'expense' },
-      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 60000, type: 'expense' },
-      { date: '2025-05-09', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 500000, type: 'expense' },
-      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 3000, type: 'expense' },
-      { date: '2025-05-09', desc: 'listrik masjid', category: 'Pengeluaran lain - lain', amount: 200000, type: 'expense' },
-      { date: '2025-05-09', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 300000, type: 'expense' },
-      { date: '2025-05-09', desc: 'biaya potongan rumdis mony', category: 'Pengeluaran lain - lain', amount: 307692, type: 'expense' },
-      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 3000, type: 'expense' },
-      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense' },
-      { date: '2025-05-09', desc: 'Listrik rumah', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense' },
-      { date: '2025-05-09', desc: 'Tukin', category: 'Tukin', amount: 4570226, type: 'income' },
-      { date: '2025-05-09', desc: 'STNK', category: 'Pengeluaran lain - lain', amount: 1530500, type: 'expense' },
-      { date: '2025-05-09', desc: 'panjar motor', category: 'DP', amount: 2502500, type: 'expense' },
-      { date: '2025-05-09', desc: 'belanja', category: 'Bensin', amount: 202500, type: 'expense' },
-      { date: '2025-05-09', desc: 'Cicilan bank Mandiri', category: 'Cicilan Bank', amount: 3950000, type: 'expense' },
-      { date: '2025-05-09', desc: 'Honor', category: 'Honor', amount: 1662500, type: 'income' },
-      { date: '2025-05-09', desc: 'Cicilan bank Mandiri', category: 'Cicilan Bank', amount: 1662500, type: 'expense' },
-      { date: '2025-05-12', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense' },
-      { date: '2025-05-13', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense' },
-      { date: '2025-05-13', desc: 'belanja', category: 'Bensin', amount: 150000, type: 'expense' },
-      { date: '2025-05-14', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense' },
-      { date: '2025-05-15', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 50000, type: 'expense' },
-      { date: '2025-05-19', desc: 'kiriman mama', category: 'Pemasukan Lainnya', amount: 500000, type: 'income' },
-      { date: '2025-05-20', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense' },
-      { date: '2025-05-21', desc: 'belanja', category: 'Bensin', amount: 100000, type: 'expense' },
-      { date: '2025-05-26', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 300000, type: 'expense' },
-      { date: '2025-05-29', desc: 'pulsa', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense' },
+      { date: '2025-05-01', desc: 'Gaji', category: 'Gaji', amount: 4993400, type: 'income', account: 'Bank Mandiri' },
+      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 60000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 500000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 60000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 500000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 3000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'listrik masjid', category: 'Pengeluaran lain - lain', amount: 200000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 300000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'biaya potongan rumdis mony', category: 'Pengeluaran lain - lain', amount: 307692, type: 'expense', account: 'Bank Mandiri' },
+      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 3000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'biaya', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'Listrik rumah', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'Tukin', category: 'Tukin', amount: 4570226, type: 'income', account: 'Bank Mandiri' },
+      { date: '2025-05-09', desc: 'STNK', category: 'Pengeluaran lain - lain', amount: 1530500, type: 'expense', account: 'Bank Mandiri' },
+      { date: '2025-05-09', desc: 'panjar motor', category: 'DP', amount: 2502500, type: 'expense', account: 'Bank Mandiri' },
+      { date: '2025-05-09', desc: 'belanja', category: 'Bensin', amount: 202500, type: 'expense', account: 'Cash' },
+      { date: '2025-05-09', desc: 'Cicilan bank Mandiri', category: 'Cicilan Bank', amount: 3950000, type: 'expense', account: 'Bank Mandiri' },
+      { date: '2025-05-09', desc: 'Honor', category: 'Honor', amount: 1662500, type: 'income', account: 'Bank Mandiri' },
+      { date: '2025-05-09', desc: 'Cicilan bank Mandiri', category: 'Cicilan Bank', amount: 1662500, type: 'expense', account: 'Bank Mandiri' },
+      { date: '2025-05-12', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-13', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-13', desc: 'belanja', category: 'Bensin', amount: 150000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-14', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-15', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 50000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-19', desc: 'kiriman mama', category: 'Pemasukan Lainnya', amount: 500000, type: 'income', account: 'Cash' },
+      { date: '2025-05-20', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-21', desc: 'belanja', category: 'Bensin', amount: 100000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-26', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 300000, type: 'expense', account: 'Cash' },
+      { date: '2025-05-29', desc: 'pulsa', category: 'Pengeluaran lain - lain', amount: 100000, type: 'expense', account: 'Cash' },
       // June 2025
-      { date: '2025-06-01', desc: 'Gaji', category: 'Gaji', amount: 6281600, type: 'income' },
-      { date: '2025-06-02', desc: 'Cicilan bank Mandiri', category: 'Cicilan Bank', amount: 3950000, type: 'expense' },
-      { date: '2025-06-02', desc: 'Tukin', category: 'Tukin', amount: 4570226, type: 'income' },
-      { date: '2025-06-02', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 500000, type: 'expense' },
-      { date: '2025-06-07', desc: 'Honor', category: 'Honor', amount: 1662500, type: 'income' },
-      { date: '2025-06-07', desc: 'Cicilan bank Mandiri', category: 'Cicilan Bank', amount: 1662500, type: 'expense' },
-      { date: '2025-06-07', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 300000, type: 'expense' }
+      { date: '2025-06-01', desc: 'Gaji', category: 'Gaji', amount: 6281600, type: 'income', account: 'Bank Mandiri' },
+      { date: '2025-06-02', desc: 'Cicilan bank Mandiri', category: 'Cicilan Bank', amount: 3950000, type: 'expense', account: 'Bank Mandiri' },
+      { date: '2025-06-02', desc: 'Tukin', category: 'Tukin', amount: 4570226, type: 'income', account: 'Bank Mandiri' },
+      { date: '2025-06-02', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 500000, type: 'expense', account: 'Cash' },
+      { date: '2025-06-07', desc: 'Honor', category: 'Honor', amount: 1662500, type: 'income', account: 'Bank Mandiri' },
+      { date: '2025-06-07', desc: 'Cicilan bank Mandiri', category: 'Cicilan Bank', amount: 1662500, type: 'expense', account: 'Bank Mandiri' },
+      { date: '2025-06-07', desc: 'Belanja harian', category: 'Pengeluaran lain - lain', amount: 300000, type: 'expense', account: 'Cash' }
     ];
 
     // =============================================
@@ -149,7 +161,16 @@ async function importInitialData() {
 
     let successCount = 0;
     let errorCount = 0;
-    let runningBalance = 805365; // Starting balance
+
+    // Track balances per account (starting balances from accountsData)
+    const accountBalances = {
+      'Cash': 805365,
+      'Bank Mandiri': 0,
+      'Bank BCA': 0,
+      'GoPay': 0,
+      'OVO': 0,
+      'Dana': 0
+    };
 
     for (const tx of transactions) {
       const cat = catMap[tx.category];
@@ -159,11 +180,19 @@ async function importInitialData() {
         continue;
       }
 
-      // Calculate running balance
+      const accountName = tx.account || 'Cash';
+      const account = accMap[accountName];
+      if (!account) {
+        console.error('Account not found:', accountName);
+        errorCount++;
+        continue;
+      }
+
+      // Calculate running balance per account
       if (tx.type === 'income') {
-        runningBalance += tx.amount;
+        accountBalances[accountName] += tx.amount;
       } else {
-        runningBalance -= tx.amount;
+        accountBalances[accountName] -= tx.amount;
       }
 
       const txData = {
@@ -172,7 +201,7 @@ async function importInitialData() {
         type: tx.type,
         amount: tx.amount,
         description: tx.desc,
-        account_id: accountId,
+        account_id: account.id,
         category_id: cat.id
       };
 
@@ -190,13 +219,22 @@ async function importInitialData() {
     }
 
     // =============================================
-    // STEP 7: Update Account Balance
+    // STEP 7: Update All Account Balances
     // =============================================
-    console.log('Updating account balance to:', runningBalance);
-    await window.db
-      .from('accounts')
-      .update({ current_balance: runningBalance })
-      .eq('id', accountId);
+    console.log('Updating account balances...');
+    for (const [accName, balance] of Object.entries(accountBalances)) {
+      const account = accMap[accName];
+      if (account) {
+        await window.db
+          .from('accounts')
+          .update({ current_balance: balance })
+          .eq('id', account.id);
+        console.log(`  ${accName}: Rp ${balance.toLocaleString('id-ID')}`);
+      }
+    }
+
+    // Calculate total balance
+    const totalBalance = Object.values(accountBalances).reduce((sum, b) => sum + b, 0);
 
     // =============================================
     // DONE
@@ -207,7 +245,12 @@ async function importInitialData() {
 Import selesai!
 ✅ Transaksi berhasil: ${successCount}
 ❌ Transaksi gagal: ${errorCount}
-💰 Saldo akhir: Rp ${runningBalance.toLocaleString('id-ID')}
+
+💰 Saldo per Akun:
+   Cash: Rp ${accountBalances['Cash'].toLocaleString('id-ID')}
+   Bank Mandiri: Rp ${accountBalances['Bank Mandiri'].toLocaleString('id-ID')}
+
+📊 Total Saldo: Rp ${totalBalance.toLocaleString('id-ID')}
     `;
 
     console.log(summary);
