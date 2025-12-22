@@ -341,8 +341,8 @@ function getAccountTypeLabel(type) {
   const labels = {
     'cash': 'Tunai',
     'bank': 'Bank',
-    'e-wallet': 'E-Wallet',
-    'credit_card': 'Kartu Kredit',
+    'ewallet': 'E-Wallet',
+    'credit': 'Kartu Kredit',
     'investment': 'Investasi'
   };
   return labels[type] || 'Umum';
@@ -379,8 +379,8 @@ function showAddAccountModal() {
                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
                 <option value="cash">💵 Tunai</option>
                 <option value="bank">🏦 Bank</option>
-                <option value="e-wallet">📱 E-Wallet</option>
-                <option value="credit_card">💳 Kartu Kredit</option>
+                <option value="ewallet">📱 E-Wallet</option>
+                <option value="credit">💳 Kartu Kredit</option>
                 <option value="investment">📈 Investasi</option>
               </select>
             </div>
@@ -477,8 +477,8 @@ async function showEditAccountModal(accountId) {
                         class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
                   <option value="cash" ${account.type === 'cash' ? 'selected' : ''}>💵 Tunai</option>
                   <option value="bank" ${account.type === 'bank' ? 'selected' : ''}>🏦 Bank</option>
-                  <option value="e-wallet" ${account.type === 'e-wallet' ? 'selected' : ''}>📱 E-Wallet</option>
-                  <option value="credit_card" ${account.type === 'credit_card' ? 'selected' : ''}>💳 Kartu Kredit</option>
+                  <option value="ewallet" ${account.type === 'ewallet' ? 'selected' : ''}>📱 E-Wallet</option>
+                  <option value="credit" ${account.type === 'credit' ? 'selected' : ''}>💳 Kartu Kredit</option>
                   <option value="investment" ${account.type === 'investment' ? 'selected' : ''}>📈 Investasi</option>
                 </select>
               </div>
