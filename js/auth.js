@@ -1,6 +1,18 @@
 // Kiyosaki Finance Tracker - Authentication Module
 
 /**
+ * Check if Supabase is ready
+ * @returns {boolean} True if Supabase is ready
+ */
+function isSupabaseReady() {
+  if (!window.db) {
+    console.error('Supabase client not initialized');
+    return false;
+  }
+  return true;
+}
+
+/**
  * Register new user
  * @param {string} email - User email
  * @param {string} password - User password
