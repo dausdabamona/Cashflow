@@ -1,7 +1,7 @@
 // Cashflow Tracker - Service Worker
-const CACHE_NAME = 'cashflow-tracker-v14';
-const STATIC_CACHE = 'cashflow-static-v14';
-const DYNAMIC_CACHE = 'cashflow-dynamic-v14';
+const CACHE_NAME = 'cashflow-tracker-v15';
+const STATIC_CACHE = 'cashflow-static-v15';
+const DYNAMIC_CACHE = 'cashflow-dynamic-v15';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -9,6 +9,12 @@ const STATIC_ASSETS = [
   '/index.html',
   '/app.html',
   '/css/style.css',
+  // Core utilities (load first)
+  '/js/core/constants.js',
+  '/js/core/validator.js',
+  '/js/core/formatter.js',
+  '/js/core/errorHandler.js',
+  // App modules
   '/js/config.js',
   '/js/utils.js',
   '/js/auth.js',
@@ -18,6 +24,7 @@ const STATIC_ASSETS = [
   '/js/settings.js',
   '/js/report.js',
   '/js/gamification.js',
+  '/js/import-data.js',
   '/js/ocr.js',
   '/manifest.json'
 ];
