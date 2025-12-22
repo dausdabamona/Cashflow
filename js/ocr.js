@@ -2,6 +2,32 @@
 
 let ocrImageData = null;
 let ocrWorker = null;
+let detectedBank = null;
+let suggestedAccountId = null;
+
+// Bank patterns for detection
+const BANK_PATTERNS = [
+  { pattern: /\b(bca|bank central asia)\b/i, name: 'BCA', keywords: ['bca', 'bank central asia'] },
+  { pattern: /\b(bri|bank rakyat indonesia)\b/i, name: 'BRI', keywords: ['bri', 'bank rakyat'] },
+  { pattern: /\b(bni|bank negara indonesia)\b/i, name: 'BNI', keywords: ['bni', 'bank negara'] },
+  { pattern: /\b(mandiri|bank mandiri)\b/i, name: 'Mandiri', keywords: ['mandiri'] },
+  { pattern: /\b(cimb|cimb niaga)\b/i, name: 'CIMB Niaga', keywords: ['cimb', 'niaga'] },
+  { pattern: /\b(btn|bank tabungan negara)\b/i, name: 'BTN', keywords: ['btn', 'tabungan negara'] },
+  { pattern: /\b(permata|bank permata)\b/i, name: 'Permata', keywords: ['permata'] },
+  { pattern: /\b(danamon|bank danamon)\b/i, name: 'Danamon', keywords: ['danamon'] },
+  { pattern: /\b(ocbc|ocbc nisp)\b/i, name: 'OCBC NISP', keywords: ['ocbc', 'nisp'] },
+  { pattern: /\b(maybank)\b/i, name: 'Maybank', keywords: ['maybank'] },
+  { pattern: /\b(gopay|go-pay)\b/i, name: 'GoPay', keywords: ['gopay', 'go-pay', 'gojek'] },
+  { pattern: /\b(ovo)\b/i, name: 'OVO', keywords: ['ovo'] },
+  { pattern: /\b(dana)\b/i, name: 'DANA', keywords: ['dana'] },
+  { pattern: /\b(shopeepay|shopee\s*pay)\b/i, name: 'ShopeePay', keywords: ['shopeepay', 'shopee'] },
+  { pattern: /\b(linkaja|link\s*aja)\b/i, name: 'LinkAja', keywords: ['linkaja', 'link aja'] },
+  { pattern: /\b(jenius)\b/i, name: 'Jenius', keywords: ['jenius'] },
+  { pattern: /\b(blu|blu by bca)\b/i, name: 'Blu BCA', keywords: ['blu'] },
+  { pattern: /\b(jago|bank jago)\b/i, name: 'Bank Jago', keywords: ['jago'] },
+  { pattern: /\b(seabank|sea bank)\b/i, name: 'SeaBank', keywords: ['seabank'] },
+  { pattern: /\b(flip)\b/i, name: 'Flip', keywords: ['flip'] }
+];
 
 /**
  * Initialize OCR module
@@ -11,6 +37,7 @@ function initOCR() {
   const closeOcrModal = document.getElementById('closeOcrModal');
   const ocrCameraInput = document.getElementById('ocrCameraInput');
   const ocrFileInput = document.getElementById('ocrFileInput');
+  const ocrPdfInput = document.getElementById('ocrPdfInput');
   const ocrRetakeBtn = document.getElementById('ocrRetakeBtn');
   const ocrProcessBtn = document.getElementById('ocrProcessBtn');
   const ocrCancelBtn = document.getElementById('ocrCancelBtn');
@@ -33,6 +60,11 @@ function initOCR() {
   }
   if (ocrFileInput) {
     ocrFileInput.addEventListener('change', handleImageSelect);
+  }
+
+  // Handle PDF input
+  if (ocrPdfInput) {
+    ocrPdfInput.addEventListener('change', handlePdfSelect);
   }
 
   // Retake button
@@ -64,6 +96,11 @@ function initOCR() {
       }
     });
   }
+
+  // Initialize PDF.js worker
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
 }
 
 /**
@@ -86,11 +123,15 @@ function closeOcrModal_() {
   if (modal) {
     modal.classList.add('hidden');
     ocrImageData = null;
+    detectedBank = null;
+    suggestedAccountId = null;
     // Reset file inputs
     const cameraInput = document.getElementById('ocrCameraInput');
     const fileInput = document.getElementById('ocrFileInput');
+    const pdfInput = document.getElementById('ocrPdfInput');
     if (cameraInput) cameraInput.value = '';
     if (fileInput) fileInput.value = '';
+    if (pdfInput) pdfInput.value = '';
   }
 }
 
@@ -103,7 +144,10 @@ function resetOcrToSource() {
   document.getElementById('ocrResultSection')?.classList.add('hidden');
   document.getElementById('ocrProcessing')?.classList.add('hidden');
   document.getElementById('ocrProcessBtn')?.classList.remove('hidden');
+  document.getElementById('ocrBankDetected')?.classList.add('hidden');
   ocrImageData = null;
+  detectedBank = null;
+  suggestedAccountId = null;
 }
 
 /**
@@ -119,6 +163,64 @@ function handleImageSelect(event) {
     showImagePreview(ocrImageData);
   };
   reader.readAsDataURL(file);
+}
+
+/**
+ * Handle PDF file selection
+ */
+async function handlePdfSelect(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const processingDiv = document.getElementById('ocrProcessing');
+  const progressText = document.getElementById('ocrProgress');
+
+  document.getElementById('ocrSourceSection')?.classList.add('hidden');
+  document.getElementById('ocrPreviewSection')?.classList.remove('hidden');
+  processingDiv?.classList.remove('hidden');
+  document.getElementById('ocrProcessBtn')?.classList.add('hidden');
+
+  if (progressText) progressText.textContent = 'Membaca PDF...';
+
+  try {
+    // Read PDF file
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    if (progressText) progressText.textContent = `PDF: ${pdf.numPages} halaman`;
+
+    // Get first page and render to canvas
+    const page = await pdf.getPage(1);
+    const scale = 2; // Higher scale for better OCR
+    const viewport = page.getViewport({ scale });
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({
+      canvasContext: context,
+      viewport: viewport
+    }).promise;
+
+    // Convert canvas to image data
+    ocrImageData = canvas.toDataURL('image/jpeg', 0.9);
+
+    // Show preview
+    const previewImg = document.getElementById('ocrPreviewImage');
+    if (previewImg) {
+      previewImg.src = ocrImageData;
+    }
+
+    processingDiv?.classList.add('hidden');
+    document.getElementById('ocrProcessBtn')?.classList.remove('hidden');
+
+  } catch (error) {
+    console.error('PDF processing error:', error);
+    showToast('Gagal membaca PDF', 'error');
+    resetOcrToSource();
+  }
 }
 
 /**
@@ -270,13 +372,31 @@ function parseReceiptText(text) {
     }
   }
 
+  // Detect bank/e-wallet from text
+  result.detectedBank = detectBankFromText(text);
+
   return result;
+}
+
+/**
+ * Detect bank or e-wallet from OCR text
+ */
+function detectBankFromText(text) {
+  const lowerText = text.toLowerCase();
+
+  for (const bank of BANK_PATTERNS) {
+    if (bank.pattern.test(text)) {
+      return bank.name;
+    }
+  }
+
+  return null;
 }
 
 /**
  * Show OCR results
  */
-function showOcrResults(rawText, parsed) {
+async function showOcrResults(rawText, parsed) {
   document.getElementById('ocrSourceSection')?.classList.add('hidden');
   document.getElementById('ocrPreviewSection')?.classList.add('hidden');
   document.getElementById('ocrResultSection')?.classList.remove('hidden');
@@ -286,6 +406,9 @@ function showOcrResults(rawText, parsed) {
   const dateInput = document.getElementById('ocrDate');
   const descInput = document.getElementById('ocrDescription');
   const rawTextArea = document.getElementById('ocrRawText');
+  const bankDetectedDiv = document.getElementById('ocrBankDetected');
+  const bankNameSpan = document.getElementById('ocrDetectedBankName');
+  const accountSelect = document.getElementById('ocrSuggestedAccount');
 
   if (amountInput && parsed.amount) {
     amountInput.value = parsed.amount.toLocaleString('id-ID');
@@ -300,7 +423,79 @@ function showOcrResults(rawText, parsed) {
     rawTextArea.value = rawText;
   }
 
+  // Handle bank detection
+  detectedBank = parsed.detectedBank;
+  if (detectedBank && bankDetectedDiv && bankNameSpan) {
+    bankDetectedDiv.classList.remove('hidden');
+    bankNameSpan.textContent = detectedBank;
+  } else {
+    bankDetectedDiv?.classList.add('hidden');
+  }
+
+  // Load accounts and suggest based on detected bank
+  await loadAccountsForOcr(accountSelect, detectedBank);
+
   lucide.createIcons();
+}
+
+/**
+ * Load accounts into OCR select and auto-select matching account
+ */
+async function loadAccountsForOcr(selectElement, bankName) {
+  if (!selectElement) return;
+
+  try {
+    const userId = currentUser?.id;
+    if (!userId) return;
+
+    const { data: accounts } = await window.db
+      .from('accounts')
+      .select('id, name, type')
+      .eq('user_id', userId)
+      .order('name');
+
+    selectElement.innerHTML = '<option value="">-- Pilih Akun --</option>';
+
+    let matchedAccountId = null;
+
+    (accounts || []).forEach(acc => {
+      const option = document.createElement('option');
+      option.value = acc.id;
+      option.textContent = `${acc.name} (${acc.type})`;
+      selectElement.appendChild(option);
+
+      // Try to match account with detected bank
+      if (bankName) {
+        const accNameLower = acc.name.toLowerCase();
+        const bankLower = bankName.toLowerCase();
+
+        // Check if account name contains bank keywords
+        const bankPattern = BANK_PATTERNS.find(p => p.name === bankName);
+        if (bankPattern) {
+          for (const keyword of bankPattern.keywords) {
+            if (accNameLower.includes(keyword)) {
+              matchedAccountId = acc.id;
+              break;
+            }
+          }
+        }
+
+        // Direct name match
+        if (!matchedAccountId && accNameLower.includes(bankLower)) {
+          matchedAccountId = acc.id;
+        }
+      }
+    });
+
+    // Auto-select matched account
+    if (matchedAccountId) {
+      selectElement.value = matchedAccountId;
+      suggestedAccountId = matchedAccountId;
+    }
+
+  } catch (error) {
+    console.error('Failed to load accounts:', error);
+  }
 }
 
 /**
@@ -310,10 +505,12 @@ async function applyOcrData() {
   const amountInput = document.getElementById('ocrAmount');
   const dateInput = document.getElementById('ocrDate');
   const descInput = document.getElementById('ocrDescription');
+  const accountSelect = document.getElementById('ocrSuggestedAccount');
 
   const amount = amountInput?.value || '';
   const date = dateInput?.value || getToday();
   const description = descInput?.value || '';
+  const selectedAccountId = accountSelect?.value || '';
 
   // Save image to storage first
   let receiptUrl = null;
@@ -330,16 +527,28 @@ async function applyOcrData() {
   const txAmountInput = document.getElementById('transactionAmount');
   const txDateInput = document.getElementById('transactionDate');
   const txDescInput = document.getElementById('transactionDescription');
+  const txAccountSelect = document.getElementById('transactionAccount');
 
   if (txAmountInput) txAmountInput.value = amount;
   if (txDateInput) txDateInput.value = date;
   if (txDescInput) txDescInput.value = description;
 
+  // Set suggested account
+  if (txAccountSelect && selectedAccountId) {
+    txAccountSelect.value = selectedAccountId;
+  }
+
   // Store receipt URL for later use when saving transaction
   window.pendingReceiptUrl = receiptUrl;
 
   closeOcrModal_();
-  showToast('Data berhasil diisi dari struk', 'success');
+
+  // Show success message with bank info if detected
+  if (detectedBank) {
+    showToast(`Data dari ${detectedBank} berhasil diisi`, 'success');
+  } else {
+    showToast('Data berhasil diisi dari struk', 'success');
+  }
 }
 
 /**

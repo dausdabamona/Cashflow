@@ -1,7 +1,7 @@
 // Cashflow Tracker - Service Worker
-const CACHE_NAME = 'cashflow-tracker-v10';
-const STATIC_CACHE = 'cashflow-static-v10';
-const DYNAMIC_CACHE = 'cashflow-dynamic-v10';
+const CACHE_NAME = 'cashflow-tracker-v11';
+const STATIC_CACHE = 'cashflow-static-v11';
+const DYNAMIC_CACHE = 'cashflow-dynamic-v11';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -27,6 +27,7 @@ const CDN_ASSETS = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest',
   'https://cdn.jsdelivr.net/npm/chart.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'
 ];
 
