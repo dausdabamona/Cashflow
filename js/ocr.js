@@ -35,6 +35,9 @@ const BANK_PATTERNS = [
 function initOCR() {
   const ocrScanBtn = document.getElementById('ocrScanBtn');
   const closeOcrModal = document.getElementById('closeOcrModal');
+  const ocrCameraBtn = document.getElementById('ocrCameraBtn');
+  const ocrFileBtn = document.getElementById('ocrFileBtn');
+  const ocrPdfBtn = document.getElementById('ocrPdfBtn');
   const ocrCameraInput = document.getElementById('ocrCameraInput');
   const ocrFileInput = document.getElementById('ocrFileInput');
   const ocrPdfInput = document.getElementById('ocrPdfInput');
@@ -54,7 +57,30 @@ function initOCR() {
     closeOcrModal.addEventListener('click', closeOcrModal_);
   }
 
-  // Handle image inputs
+  // Button click handlers to trigger hidden file inputs (more reliable on mobile)
+  if (ocrCameraBtn && ocrCameraInput) {
+    ocrCameraBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      ocrCameraInput.click();
+    });
+  }
+  if (ocrFileBtn && ocrFileInput) {
+    ocrFileBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      ocrFileInput.click();
+    });
+  }
+  if (ocrPdfBtn && ocrPdfInput) {
+    ocrPdfBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      ocrPdfInput.click();
+    });
+  }
+
+  // Handle file input changes
   if (ocrCameraInput) {
     ocrCameraInput.addEventListener('change', handleImageSelect);
   }
@@ -101,6 +127,8 @@ function initOCR() {
   if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
+
+  console.log('OCR module initialized');
 }
 
 /**

@@ -337,44 +337,41 @@
       <div id="ocrSourceSection" class="space-y-3">
         <p class="text-sm text-gray-600 mb-4">Upload struk, screenshot transaksi bank, atau PDF rekening koran.</p>
 
-        <label class="block cursor-pointer">
-          <div class="py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <i data-lucide="camera" class="w-5 h-5 text-blue-600"></i>
-            </div>
-            <div>
-              <p class="font-medium text-gray-900 text-sm">Ambil Foto</p>
-              <p class="text-xs text-gray-500">Foto struk atau layar HP</p>
-            </div>
+        <!-- Camera Button -->
+        <button type="button" id="ocrCameraBtn" class="w-full text-left py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <i data-lucide="camera" class="w-5 h-5 text-blue-600"></i>
           </div>
-          <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="hidden">
-        </label>
+          <div>
+            <p class="font-medium text-gray-900 text-sm">Ambil Foto</p>
+            <p class="text-xs text-gray-500">Foto struk atau layar HP</p>
+          </div>
+        </button>
+        <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="hidden">
 
-        <label class="block cursor-pointer">
-          <div class="py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-              <i data-lucide="image" class="w-5 h-5 text-green-600"></i>
-            </div>
-            <div>
-              <p class="font-medium text-gray-900 text-sm">Screenshot/Gambar</p>
-              <p class="text-xs text-gray-500">Screenshot m-banking, e-wallet, struk</p>
-            </div>
+        <!-- Gallery/File Button -->
+        <button type="button" id="ocrFileBtn" class="w-full text-left py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+            <i data-lucide="image" class="w-5 h-5 text-green-600"></i>
           </div>
-          <input type="file" id="ocrFileInput" accept="image/*" class="hidden">
-        </label>
+          <div>
+            <p class="font-medium text-gray-900 text-sm">Screenshot/Gambar</p>
+            <p class="text-xs text-gray-500">Screenshot m-banking, e-wallet, struk</p>
+          </div>
+        </button>
+        <input type="file" id="ocrFileInput" accept="image/*" class="hidden">
 
-        <label class="block cursor-pointer">
-          <div class="py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-              <i data-lucide="file-text" class="w-5 h-5 text-red-600"></i>
-            </div>
-            <div>
-              <p class="font-medium text-gray-900 text-sm">PDF Rekening Koran</p>
-              <p class="text-xs text-gray-500">Upload file PDF dari bank</p>
-            </div>
+        <!-- PDF Button -->
+        <button type="button" id="ocrPdfBtn" class="w-full text-left py-3 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-5 h-5 text-red-600"></i>
           </div>
-          <input type="file" id="ocrPdfInput" accept="application/pdf" class="hidden">
-        </label>
+          <div>
+            <p class="font-medium text-gray-900 text-sm">PDF Rekening Koran</p>
+            <p class="text-xs text-gray-500">Upload file PDF dari bank</p>
+          </div>
+        </button>
+        <input type="file" id="ocrPdfInput" accept="application/pdf" class="hidden">
       </div>
 
       <!-- Image Preview & Processing -->
