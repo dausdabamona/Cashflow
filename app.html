@@ -7,6 +7,22 @@
   <meta name="description" content="Kiyosaki Finance Tracker - Ubah Liability jadi Asset">
   <title>Kiyosaki Tracker</title>
 
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Kiyosaki">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Kiyosaki Tracker">
+  <meta name="msapplication-TileColor" content="#3B82F6">
+  <meta name="msapplication-tap-highlight" content="no">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%233B82F6' rx='40' width='180' height='180'/><text x='90' y='115' font-size='80' text-anchor='middle' fill='white'>💰</text></svg>">
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -259,10 +275,40 @@
   <script src="js/transaction.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/report.js"></script>
+  <script src="js/gamification.js"></script>
   <script src="js/app.js"></script>
   <script>
     // Initialize app when DOM is loaded
     document.addEventListener('DOMContentLoaded', initApp);
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((registration) => {
+            console.log('SW registered:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('SW registration failed:', error);
+          });
+      });
+    }
+
+    // Handle URL parameters for shortcuts
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const view = urlParams.get('view');
+
+    if (action === 'expense' || action === 'income') {
+      window.addEventListener('appReady', () => {
+        openTransactionModal(action);
+      });
+    }
+    if (view) {
+      window.addEventListener('appReady', () => {
+        showView(view);
+      });
+    }
   </script>
 </body>
 </html>

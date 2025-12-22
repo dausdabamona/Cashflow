@@ -1,0 +1,59 @@
+{
+  "name": "Kiyosaki Finance Tracker",
+  "short_name": "Kiyosaki",
+  "description": "Track your finances using Robert Kiyosaki's Rich Dad Poor Dad concepts",
+  "start_url": "/app.html",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "id",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%233B82F6' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>💰</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%233B82F6' rx='40' width='192' height='192'/><text x='96' y='120' font-size='80' text-anchor='middle' fill='white'>💰</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%233B82F6' rx='100' width='512' height='512'/><text x='256' y='320' font-size='200' text-anchor='middle' fill='white'>💰</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Tambah Pengeluaran",
+      "short_name": "Expense",
+      "description": "Catat pengeluaran baru",
+      "url": "/app.html?action=expense",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23EF4444' rx='20' width='96' height='96'/><text x='48' y='65' font-size='50' text-anchor='middle' fill='white'>➖</text></svg>", "sizes": "96x96" }]
+    },
+    {
+      "name": "Tambah Pemasukan",
+      "short_name": "Income",
+      "description": "Catat pemasukan baru",
+      "url": "/app.html?action=income",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%2310B981' rx='20' width='96' height='96'/><text x='48' y='65' font-size='50' text-anchor='middle' fill='white'>➕</text></svg>", "sizes": "96x96" }]
+    },
+    {
+      "name": "Laporan",
+      "short_name": "Report",
+      "description": "Lihat laporan bulanan",
+      "url": "/app.html?view=report",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%238B5CF6' rx='20' width='96' height='96'/><text x='48' y='65' font-size='50' text-anchor='middle' fill='white'>📊</text></svg>", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
