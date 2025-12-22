@@ -74,8 +74,7 @@ async function importInitialData() {
         name: 'Cash',
         type: 'cash',
         icon: '💵',
-        balance: 805365,
-        opening_balance: 805365
+        current_balance: 805365
       })
       .select()
       .single();
@@ -196,7 +195,7 @@ async function importInitialData() {
     console.log('Updating account balance to:', runningBalance);
     await window.db
       .from('accounts')
-      .update({ balance: runningBalance })
+      .update({ current_balance: runningBalance })
       .eq('id', accountId);
 
     // =============================================

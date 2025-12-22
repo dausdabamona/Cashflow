@@ -43,9 +43,9 @@ const DEFAULT_INCOME_CATEGORIES = [
 ];
 
 const DEFAULT_ACCOUNTS = [
-  { name: 'Cash', type: 'cash', icon: '💵', balance: 0 },
-  { name: 'Bank BCA', type: 'bank', icon: '🏦', balance: 0 },
-  { name: 'GoPay', type: 'ewallet', icon: '📱', balance: 0 }
+  { name: 'Cash', type: 'cash', icon: '💵', current_balance: 0 },
+  { name: 'Bank BCA', type: 'bank', icon: '🏦', current_balance: 0 },
+  { name: 'GoPay', type: 'ewallet', icon: '📱', current_balance: 0 }
 ];
 
 /**
