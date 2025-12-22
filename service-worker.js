@@ -1,7 +1,7 @@
 // Cashflow Tracker - Service Worker
-const CACHE_NAME = 'cashflow-tracker-v17';
-const STATIC_CACHE = 'cashflow-static-v17';
-const DYNAMIC_CACHE = 'cashflow-dynamic-v17';
+const CACHE_NAME = 'cashflow-tracker-v18';
+const STATIC_CACHE = 'cashflow-static-v18';
+const DYNAMIC_CACHE = 'cashflow-dynamic-v18';
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -22,6 +22,12 @@ const STATIC_ASSETS = [
   '/js/services/categoryService.js',
   '/js/services/transactionService.js',
   '/js/services/dashboardService.js',
+  '/js/services/recurringService.js',
+  '/js/services/budgetService.js',
+  '/js/services/reminderService.js',
+  '/js/services/ocrService.js',
+  '/js/services/importService.js',
+  '/js/services/exportService.js',
   // UI Components
   '/js/components/toast.js',
   '/js/components/modal.js',

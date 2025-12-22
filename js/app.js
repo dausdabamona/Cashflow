@@ -118,6 +118,23 @@ async function initApp() {
   // Dispatch appReady event
   window.dispatchEvent(new Event('appReady'));
 
+  // Background tasks - execute after initial load
+  setTimeout(async () => {
+    try {
+      // Execute due recurring transactions
+      if (typeof RecurringService !== 'undefined') {
+        await RecurringService.executeDue();
+      }
+
+      // Check and notify about upcoming reminders
+      if (typeof ReminderService !== 'undefined') {
+        await ReminderService.checkAndNotify();
+      }
+    } catch (error) {
+      ErrorHandler?.warn('Background tasks error:', error) || console.warn('Background tasks error:', error);
+    }
+  }, 1500);
+
   ErrorHandler?.info('App initialized successfully') || console.log('✅ App initialized successfully');
 }
 
