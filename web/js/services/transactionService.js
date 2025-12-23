@@ -1,112 +1,127 @@
-const TransactionService = {
+var TransactionService = {
   tableName: 'transactions',
-
-  async getAll(options = {}) {
+  
+  getAll: async function(options) {
+    options = options || {};
     try {
-      const userId = BaseService.getUserId();
+      var userId = BaseService.getUserId();
       if (!userId) return [];
-
-      let query = BaseService.getClient()
-        .from(this.tableName)
+      
+      var query = BaseService.getClient()
+        .from('transactions')
         .select('*')
         .eq('user_id', userId)
         .eq('is_deleted', false)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
-
+      
       if (options.startDate) query = query.gte('date', options.startDate);
       if (options.endDate) query = query.lte('date', options.endDate);
       if (options.type) query = query.eq('type', options.type);
       if (options.itemId) query = query.eq('item_id', options.itemId);
-      if (options.loanId) query = query.eq('loan_id', options.loanId);
       if (options.limit) query = query.limit(options.limit);
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
+      
+      var result = await query;
+      if (result.error) throw result.error;
+      return result.data || [];
     } catch (error) {
       console.error('[TransactionService.getAll]', error);
       return [];
     }
   },
-
-  async getMonthly(month, year) {
-    const m = month || BaseService.getCurrentMonth();
-    const y = year || BaseService.getCurrentYear();
-    const startDate = y + '-' + String(m).padStart(2, '0') + '-01';
-    const lastDay = new Date(y, m, 0).getDate();
-    const endDate = y + '-' + String(m).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
-    return this.getAll({ startDate, endDate });
+  
+  getMonthly: async function(month, year) {
+    var m = month || BaseService.getCurrentMonth();
+    var y = year || BaseService.getCurrentYear();
+    var startDate = y + '-' + String(m).padStart(2, '0') + '-01';
+    var lastDay = new Date(y, m, 0).getDate();
+    var endDate = y + '-' + String(m).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
+    return this.getAll({ startDate: startDate, endDate: endDate });
   },
-
-  async getRecent(limit = 5) {
-    return this.getAll({ limit });
+  
+  getByItem: async function(itemId) {
+    return this.getAll({ itemId: itemId });
   },
-
-  async getByItem(itemId) {
-    return this.getAll({ itemId });
+  
+  getRecent: async function(limit) {
+    return this.getAll({ limit: limit || 5 });
   },
-
-  async getByLoan(loanId) {
-    return this.getAll({ loanId });
-  },
-
-  async create(data) {
+  
+  create: async function(data) {
     try {
-      const userId = BaseService.getUserId();
-      const { data: result, error } = await BaseService.getClient()
-        .from(this.tableName)
-        .insert({ ...data, user_id: userId, date: data.date || BaseService.getToday() })
+      var userId = BaseService.getUserId();
+      var result = await BaseService.getClient()
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          type: data.type,
+          amount: data.amount,
+          account_id: data.account_id || null,
+          category_id: data.category_id || null,
+          date: data.date || BaseService.getToday(),
+          description: data.description || null,
+          income_type: data.income_type || null,
+          item_id: data.item_id || null,
+          loan_id: data.loan_id || null
+        })
         .select()
         .single();
-
-      if (error) throw error;
-      return result;
+      
+      if (result.error) throw result.error;
+      return result.data;
     } catch (error) {
       console.error('[TransactionService.create]', error);
       return null;
     }
   },
-
-  async update(id, updates) {
+  
+  update: async function(id, updates) {
     try {
-      const { data, error } = await BaseService.getClient()
-        .from(this.tableName)
+      var result = await BaseService.getClient()
+        .from('transactions')
         .update(updates)
         .eq('id', id)
         .select()
         .single();
-
-      if (error) throw error;
-      return data;
+      
+      if (result.error) throw result.error;
+      return result.data;
     } catch (error) {
       console.error('[TransactionService.update]', error);
       return null;
     }
   },
-
-  async delete(id) {
+  
+  delete: async function(id) {
     try {
-      const { error } = await BaseService.getClient()
-        .from(this.tableName)
+      var result = await BaseService.getClient()
+        .from('transactions')
         .update({ is_deleted: true, deleted_at: new Date().toISOString() })
         .eq('id', id);
-
-      if (error) throw error;
+      
+      if (result.error) throw result.error;
       return true;
     } catch (error) {
       console.error('[TransactionService.delete]', error);
       return false;
     }
   },
-
-  getSummary(transactions) {
-    const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
-    const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
-    const passiveIncome = transactions.filter(t => t.type === 'income' && t.income_type === 'passive').reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
-    return { income, expense, passiveIncome, net: income - expense };
+  
+  getSummary: function(transactions) {
+    var income = 0, expense = 0, passiveIncome = 0;
+    for (var i = 0; i < transactions.length; i++) {
+      var t = transactions[i];
+      var amount = parseFloat(t.amount) || 0;
+      if (t.type === 'income') {
+        income += amount;
+        if (t.income_type === 'passive') passiveIncome += amount;
+      } else if (t.type === 'expense') {
+        expense += amount;
+      }
+    }
+    return { income: income, expense: expense, passiveIncome: passiveIncome, net: income - expense };
   }
 };
 
 window.TransactionService = TransactionService;
-console.log('✅ TransactionService loaded');
+console.log('✅ TransactionService loaded (object literal)');
