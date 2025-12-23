@@ -5,7 +5,8 @@ var DashboardService = {
       var categories = await CategoryService.getAll();
       var transactions = await TransactionService.getMonthly();
       var loans = await this.getLoans();
-      
+      var items = await ItemService.getAll();
+
       var summary = TransactionService.getSummary(transactions);
       var totalBalance = 0;
       for (var i = 0; i < accounts.length; i++) {
@@ -13,27 +14,34 @@ var DashboardService = {
           totalBalance += parseFloat(accounts[i].current_balance) || 0;
         }
       }
-      
+
       var passiveExpense = 0;
       for (var j = 0; j < loans.length; j++) {
         passiveExpense += parseFloat(loans[j].monthly_payment) || 0;
       }
-      
+
+      // Calculate items summary
+      var itemsSummary = this.calculateItemsSummary(items);
+
       var healthScore = this.calculateHealthScore(summary.income, summary.expense, summary.passiveIncome, passiveExpense, totalBalance);
       var status = this.getKiyosakiStatus(summary.passiveIncome, summary.expense);
-      
+
       return {
         accounts: accounts,
         categories: categories,
         transactions: transactions,
         loans: loans,
+        items: items,
         summary: {
           income: summary.income,
           expense: summary.expense,
           passiveIncome: summary.passiveIncome,
           net: summary.net,
           totalBalance: totalBalance,
-          passiveExpense: passiveExpense
+          passiveExpense: passiveExpense,
+          totalAssets: itemsSummary.totalAssets,
+          totalLiabilities: itemsSummary.totalLiabilities,
+          itemsNetWorth: itemsSummary.netWorth
         },
         healthScore: healthScore,
         status: status
@@ -116,6 +124,26 @@ var DashboardService = {
       return { status: 'PROGRESS', label: 'Dalam Progress', color: 'yellow' };
     }
     return { status: 'START', label: 'Mulai Bangun Aset', color: 'gray' };
+  },
+
+  calculateItemsSummary: function(items) {
+    var totalAssets = 0;
+    var totalLiabilities = 0;
+
+    for (var i = 0; i < items.length; i++) {
+      var value = parseFloat(items[i].current_value) || 0;
+      if (items[i].type === 'asset') {
+        totalAssets += value;
+      } else if (items[i].type === 'liability') {
+        totalLiabilities += value;
+      }
+    }
+
+    return {
+      totalAssets: totalAssets,
+      totalLiabilities: totalLiabilities,
+      netWorth: totalAssets - totalLiabilities
+    };
   }
 };
 

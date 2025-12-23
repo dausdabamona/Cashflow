@@ -53,7 +53,10 @@ const Dashboard = {
       return;
     }
 
-    const { summary, accounts, recentTransactions, expenseByCategory } = data;
+    const { summary, accounts, transactions } = data;
+
+    // Get recent transactions (limit 5)
+    const recentTransactions = (transactions || []).slice(0, 5);
 
     container.innerHTML = `
       <!-- Summary Cards -->
@@ -62,7 +65,7 @@ const Dashboard = {
           <div class="card-icon bg-blue">💰</div>
           <div class="card-content">
             <p class="card-label">Total Saldo</p>
-            <p class="card-value">${Formatter.currency(summary.totalBalance)}</p>
+            <p class="card-value">${Formatter.currency(summary.totalBalance || 0)}</p>
           </div>
         </div>
 
@@ -70,7 +73,7 @@ const Dashboard = {
           <div class="card-icon bg-green">📈</div>
           <div class="card-content">
             <p class="card-label">Pemasukan Bulan Ini</p>
-            <p class="card-value text-green">${Formatter.currency(summary.monthlyIncome)}</p>
+            <p class="card-value text-green">${Formatter.currency(summary.income || 0)}</p>
           </div>
         </div>
 
@@ -78,7 +81,7 @@ const Dashboard = {
           <div class="card-icon bg-red">📉</div>
           <div class="card-content">
             <p class="card-label">Pengeluaran Bulan Ini</p>
-            <p class="card-value text-red">${Formatter.currency(summary.monthlyExpense)}</p>
+            <p class="card-value text-red">${Formatter.currency(summary.expense || 0)}</p>
           </div>
         </div>
 
@@ -86,12 +89,38 @@ const Dashboard = {
           <div class="card-icon bg-purple">💵</div>
           <div class="card-content">
             <p class="card-label">Sisa Bulan Ini</p>
-            <p class="card-value ${summary.monthlyBalance >= 0 ? 'text-green' : 'text-red'}">
-              ${Formatter.currency(summary.monthlyBalance)}
+            <p class="card-value ${summary.net >= 0 ? 'text-green' : 'text-red'}">
+              ${Formatter.currency(summary.net || 0)}
             </p>
           </div>
         </div>
       </div>
+
+      <!-- Asset & Liability Summary (jika ada items) -->
+      ${(summary.totalAssets > 0 || summary.totalLiabilities > 0) ? `
+        <div class="card" style="padding: 20px; margin-bottom: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="color: white; font-size: 1.125rem; font-weight: 600;">📊 Ringkasan Aset & Liabilitas</h3>
+            <button onclick="Navigation.goTo('items')" style="padding: 8px 16px; background: white; color: #667eea; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+              Lihat Detail →
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+            <div>
+              <p style="color: rgba(255,255,255,0.8); font-size: 0.875rem; margin-bottom: 4px;">📈 Total Aset</p>
+              <p style="color: white; font-size: 1.5rem; font-weight: 700;">${Formatter.currency(summary.totalAssets)}</p>
+            </div>
+            <div>
+              <p style="color: rgba(255,255,255,0.8); font-size: 0.875rem; margin-bottom: 4px;">📉 Total Liabilitas</p>
+              <p style="color: white; font-size: 1.5rem; font-weight: 700;">${Formatter.currency(summary.totalLiabilities)}</p>
+            </div>
+            <div>
+              <p style="color: rgba(255,255,255,0.8); font-size: 0.875rem; margin-bottom: 4px;">💎 Net Worth</p>
+              <p style="color: white; font-size: 1.5rem; font-weight: 700;">${Formatter.currency(summary.itemsNetWorth)}</p>
+            </div>
+          </div>
+        </div>
+      ` : ''}
 
       <!-- Accounts Section -->
       <div class="section">
