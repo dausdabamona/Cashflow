@@ -36,6 +36,7 @@ if (typeof window.supabase === 'undefined') {
   try {
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     window.db = supabase;
+    window.supabaseClient = supabase; // Alias for services
     console.log('✅ Supabase client initialized successfully');
   } catch (error) {
     console.error('❌ Failed to initialize Supabase client:', error);

@@ -14,10 +14,11 @@ class BaseService {
    * @throws {Error} jika tidak terautentikasi
    */
   getClient() {
-    if (!window.supabase) {
-      throw new Error('Supabase client not initialized');
+    const client = window.supabaseClient || window.db;
+    if (!client) {
+      throw new Error('Supabase client not initialized. Check config.js');
     }
-    return window.supabase;
+    return client;
   }
 
   /**
@@ -26,11 +27,38 @@ class BaseService {
    * @throws {Error} jika tidak terautentikasi
    */
   getUserId() {
-    const userId = AppStore.getUserId();
+    // Try multiple sources for user ID
+    const userId = (typeof AppStore !== 'undefined' && AppStore.getUserId?.()) ||
+                   window.currentUser?.id ||
+                   null;
     if (!userId) {
       throw new Error('User not authenticated');
     }
     return userId;
+  }
+
+  /**
+   * Get today's date in YYYY-MM-DD format
+   * @returns {string}
+   */
+  getToday() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  /**
+   * Get current month (1-12)
+   * @returns {number}
+   */
+  getCurrentMonth() {
+    return new Date().getMonth() + 1;
+  }
+
+  /**
+   * Get current year
+   * @returns {number}
+   */
+  getCurrentYear() {
+    return new Date().getFullYear();
   }
 
   /**
@@ -287,6 +315,57 @@ class BaseService {
     }
   }
 }
+
+// Static helper methods for object-literal services
+BaseService.getClient = function() {
+  const client = window.supabaseClient || window.db;
+  if (!client) {
+    throw new Error('Supabase client not initialized. Check config.js');
+  }
+  return client;
+};
+
+BaseService.getUserId = function() {
+  const userId = (typeof AppStore !== 'undefined' && AppStore.getUserId?.()) ||
+                 window.currentUser?.id ||
+                 null;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  return userId;
+};
+
+BaseService.getToday = function() {
+  return new Date().toISOString().split('T')[0];
+};
+
+BaseService.getCurrentMonth = function() {
+  return new Date().getMonth() + 1;
+};
+
+BaseService.getCurrentYear = function() {
+  return new Date().getFullYear();
+};
+
+BaseService.getMonthRange = function(month, year) {
+  // month is 0-11
+  const startDate = new Date(year, month, 1).toISOString().split('T')[0];
+  const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+  return { startDate, endDate };
+};
+
+BaseService.handleResponse = function(response, context) {
+  if (response.error) {
+    ErrorHandler?.handle(response.error, context) || console.error(`[${context}]`, response.error);
+    throw response.error;
+  }
+  return response.data;
+};
+
+BaseService.handleError = function(error, context) {
+  ErrorHandler?.handle(error, context) || console.error(`[${context}]`, error);
+  throw error;
+};
 
 // Export global
 window.BaseService = BaseService;
