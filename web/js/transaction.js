@@ -9,28 +9,28 @@ const Transaction = {
   /**
    * Show expense form
    */
-  showExpenseForm() {
+  async showExpenseForm() {
     this.currentType = 'expense';
     this.showModal('Tambah Pengeluaran', this.renderExpenseForm());
-    this.loadFormData();
+    await this.loadFormData();
   },
 
   /**
    * Show income form
    */
-  showIncomeForm() {
+  async showIncomeForm() {
     this.currentType = 'income';
     this.showModal('Tambah Pemasukan', this.renderIncomeForm());
-    this.loadFormData();
+    await this.loadFormData();
   },
 
   /**
    * Show transfer form
    */
-  showTransferForm() {
+  async showTransferForm() {
     this.currentType = 'transfer';
     this.showModal('Transfer Antar Akun', this.renderTransferForm());
-    this.loadFormData();
+    await this.loadFormData();
   },
 
   /**
@@ -271,7 +271,15 @@ const Transaction = {
    */
   async loadAccountsDropdown() {
     try {
+      console.log('[Transaction] Loading accounts...');
       var accounts = await AccountService.getAll();
+      console.log('[Transaction] Accounts loaded:', accounts.length);
+
+      if (!accounts || accounts.length === 0) {
+        console.warn('[Transaction] No accounts found! User needs to create accounts first.');
+        Toast.warning('Belum ada akun. Silakan buat akun terlebih dahulu.');
+        return;
+      }
 
       // Expense form
       var expenseAccount = document.getElementById('expense-account');
@@ -283,6 +291,7 @@ const Transaction = {
           opt.textContent = (acc.icon || '🏦') + ' ' + acc.name;
           expenseAccount.appendChild(opt);
         });
+        console.log('[Transaction] Expense account dropdown populated');
       }
 
       // Income form
@@ -295,6 +304,7 @@ const Transaction = {
           opt.textContent = (acc.icon || '🏦') + ' ' + acc.name;
           incomeAccount.appendChild(opt);
         });
+        console.log('[Transaction] Income account dropdown populated');
       }
 
       // Transfer form
@@ -314,9 +324,11 @@ const Transaction = {
           opt2.textContent = (acc.icon || '🏦') + ' ' + acc.name;
           transferTo.appendChild(opt2);
         });
+        console.log('[Transaction] Transfer account dropdowns populated');
       }
     } catch (error) {
-      console.error('Failed to load accounts:', error);
+      console.error('[Transaction] Failed to load accounts:', error);
+      Toast.error('Gagal memuat data akun');
     }
   },
 
@@ -325,7 +337,14 @@ const Transaction = {
    */
   async loadCategoriesDropdown() {
     try {
+      console.log('[Transaction] Loading categories...');
       var categories = await CategoryService.getAll();
+      console.log('[Transaction] Categories loaded:', categories.length);
+
+      if (!categories || categories.length === 0) {
+        console.warn('[Transaction] No categories found!');
+        return;
+      }
 
       // Expense categories
       var expenseCategory = document.getElementById('expense-category');
@@ -338,6 +357,7 @@ const Transaction = {
           opt.textContent = (cat.icon || '📁') + ' ' + cat.name;
           expenseCategory.appendChild(opt);
         });
+        console.log('[Transaction] Expense categories populated:', expenseCats.length);
       }
 
       // Income categories
@@ -351,9 +371,11 @@ const Transaction = {
           opt.textContent = (cat.icon || '📁') + ' ' + cat.name;
           incomeCategory.appendChild(opt);
         });
+        console.log('[Transaction] Income categories populated:', incomeCats.length);
       }
     } catch (error) {
-      console.error('Failed to load categories:', error);
+      console.error('[Transaction] Failed to load categories:', error);
+      Toast.error('Gagal memuat data kategori');
     }
   },
 
@@ -362,7 +384,9 @@ const Transaction = {
    */
   async loadItemsDropdown() {
     try {
+      console.log('[Transaction] Loading items...');
       var items = await ItemService.getActive();
+      console.log('[Transaction] Items loaded:', items.length);
 
       var selects = ['expense-item', 'income-item'];
 
@@ -372,7 +396,10 @@ const Transaction = {
 
         select.innerHTML = '<option value="">-- Tidak terkait barang --</option>';
 
-        if (items.length === 0) return;
+        if (items.length === 0) {
+          console.log('[Transaction] No items found for', selectId);
+          return;
+        }
 
         // Group by type
         var assetItems = items.filter(function(i) { return i.type === 'asset'; });
@@ -418,8 +445,10 @@ const Transaction = {
           select.appendChild(neutralGroup);
         }
       });
+
+      console.log('[Transaction] Items dropdown populated');
     } catch (error) {
-      console.error('Failed to load items:', error);
+      console.error('[Transaction] Failed to load items:', error);
     }
   },
 
