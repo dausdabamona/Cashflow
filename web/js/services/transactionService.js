@@ -17,6 +17,8 @@ const TransactionService = {
       if (options.startDate) query = query.gte('date', options.startDate);
       if (options.endDate) query = query.lte('date', options.endDate);
       if (options.type) query = query.eq('type', options.type);
+      if (options.itemId) query = query.eq('item_id', options.itemId);
+      if (options.loanId) query = query.eq('loan_id', options.loanId);
       if (options.limit) query = query.limit(options.limit);
 
       const { data, error } = await query;
@@ -39,6 +41,14 @@ const TransactionService = {
 
   async getRecent(limit = 5) {
     return this.getAll({ limit });
+  },
+
+  async getByItem(itemId) {
+    return this.getAll({ itemId });
+  },
+
+  async getByLoan(loanId) {
+    return this.getAll({ loanId });
   },
 
   async create(data) {

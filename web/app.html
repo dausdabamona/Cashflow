@@ -331,6 +331,7 @@
   <script src="js/services/accountService.js"></script>
   <script src="js/services/categoryService.js"></script>
   <script src="js/services/transactionService.js"></script>
+  <script src="js/services/itemService.js"></script>
   <script src="js/services/dashboardService.js"></script>
 
   <!-- 7. Components -->
@@ -359,11 +360,15 @@
     console.log('AccountService:', typeof AccountService, typeof AccountService?.getAll);
     console.log('CategoryService:', typeof CategoryService, typeof CategoryService?.getAll);
     console.log('TransactionService:', typeof TransactionService, typeof TransactionService?.getAll);
+    console.log('ItemService:', typeof ItemService, typeof ItemService?.getAll);
     console.log('DashboardService:', typeof DashboardService, typeof DashboardService?.loadDashboard);
 
     if (typeof AccountService === 'undefined') {
       console.error('❌ AccountService NOT LOADED!');
       console.error('Check: 1) File exists  2) No syntax error  3) Script tag present');
+    }
+    if (typeof ItemService === 'undefined') {
+      console.error('❌ ItemService NOT LOADED!');
     }
   </script>
 
