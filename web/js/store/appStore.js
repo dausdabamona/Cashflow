@@ -53,6 +53,14 @@ const AppStore = {
   },
 
   /**
+   * Get current user ID
+   * @returns {string|null} User ID or null
+   */
+  getUserId() {
+    return this.state.user?.id || null;
+  },
+
+  /**
    * Set current user
    * @param {Object} user - User object
    */
