@@ -12,6 +12,8 @@ const Transaction = {
   async showExpenseForm() {
     this.currentType = 'expense';
     this.showModal('Tambah Pengeluaran', this.renderExpenseForm());
+    // Wait for DOM to render
+    await new Promise(resolve => setTimeout(resolve, 50));
     await this.loadFormData();
   },
 
@@ -21,6 +23,8 @@ const Transaction = {
   async showIncomeForm() {
     this.currentType = 'income';
     this.showModal('Tambah Pemasukan', this.renderIncomeForm());
+    // Wait for DOM to render
+    await new Promise(resolve => setTimeout(resolve, 50));
     await this.loadFormData();
   },
 
@@ -30,6 +34,8 @@ const Transaction = {
   async showTransferForm() {
     this.currentType = 'transfer';
     this.showModal('Transfer Antar Akun', this.renderTransferForm());
+    // Wait for DOM to render
+    await new Promise(resolve => setTimeout(resolve, 50));
     await this.loadFormData();
   },
 
@@ -259,11 +265,40 @@ const Transaction = {
    * Load form data (categories, accounts, items)
    */
   async loadFormData() {
+    console.log('[Transaction] loadFormData started for type:', this.currentType);
+
+    // Debug: check if elements exist
+    const checkElements = () => {
+      const elements = {
+        'expense-account': document.getElementById('expense-account'),
+        'expense-category': document.getElementById('expense-category'),
+        'expense-item': document.getElementById('expense-item'),
+        'income-account': document.getElementById('income-account'),
+        'income-category': document.getElementById('income-category'),
+        'income-item': document.getElementById('income-item'),
+        'transfer-from-account': document.getElementById('transfer-from-account'),
+        'transfer-to-account': document.getElementById('transfer-to-account')
+      };
+
+      console.log('[Transaction] Form elements check:', {
+        expenseAccount: !!elements['expense-account'],
+        expenseCategory: !!elements['expense-category'],
+        incomeAccount: !!elements['income-account'],
+        incomeCategory: !!elements['income-category'],
+        transferFrom: !!elements['transfer-from-account'],
+        transferTo: !!elements['transfer-to-account']
+      });
+    };
+
+    checkElements();
+
     await Promise.all([
       this.loadAccountsDropdown(),
       this.loadCategoriesDropdown(),
       this.loadItemsDropdown()
     ]);
+
+    console.log('[Transaction] loadFormData completed');
   },
 
   /**
