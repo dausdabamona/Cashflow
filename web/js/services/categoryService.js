@@ -1,41 +1,47 @@
-const CategoryService = {
+var CategoryService = {
   tableName: 'categories',
-
-  async getAll() {
+  
+  getAll: async function() {
     try {
-      const userId = BaseService.getUserId();
+      var userId = BaseService.getUserId();
       if (!userId) return [];
-
-      const { data, error } = await BaseService.getClient()
-        .from(this.tableName)
+      
+      var result = await BaseService.getClient()
+        .from('categories')
         .select('*')
         .eq('user_id', userId)
         .eq('is_active', true)
         .order('display_order', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
+      
+      if (result.error) throw result.error;
+      return result.data || [];
     } catch (error) {
       console.error('[CategoryService.getAll]', error);
       return [];
     }
   },
-
-  async getByType(type) {
-    const all = await this.getAll();
-    return all.filter(c => c.type === type);
+  
+  getByType: async function(type) {
+    var all = await this.getAll();
+    var filtered = [];
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].type === type) {
+        filtered.push(all[i]);
+      }
+    }
+    return filtered;
   },
-
-  async getById(id) {
+  
+  getById: async function(id) {
     try {
-      const { data, error } = await BaseService.getClient()
-        .from(this.tableName)
+      var result = await BaseService.getClient()
+        .from('categories')
         .select('*')
         .eq('id', id)
         .single();
-
-      if (error) throw error;
-      return data;
+      
+      if (result.error) throw result.error;
+      return result.data;
     } catch (error) {
       console.error('[CategoryService.getById]', error);
       return null;
@@ -44,4 +50,4 @@ const CategoryService = {
 };
 
 window.CategoryService = CategoryService;
-console.log('✅ CategoryService loaded');
+console.log('✅ CategoryService loaded (object literal)');

@@ -1,26 +1,32 @@
-const BaseService = {
-  getClient() {
-    const client = window.supabaseClient;
+var BaseService = {
+  getClient: function() {
+    var client = window.supabaseClient;
     if (!client) throw new Error('Supabase client not initialized');
     return client;
   },
-
-  getUserId() {
-    return window.AppStore?.getUserId() || window.currentUser?.id || null;
+  
+  getUserId: function() {
+    if (window.AppStore && window.AppStore.getUserId) {
+      return window.AppStore.getUserId();
+    }
+    if (window.currentUser && window.currentUser.id) {
+      return window.currentUser.id;
+    }
+    return null;
   },
-
-  getToday() {
+  
+  getToday: function() {
     return new Date().toISOString().split('T')[0];
   },
-
-  getCurrentMonth() {
+  
+  getCurrentMonth: function() {
     return new Date().getMonth() + 1;
   },
-
-  getCurrentYear() {
+  
+  getCurrentYear: function() {
     return new Date().getFullYear();
   }
 };
 
 window.BaseService = BaseService;
-console.log('✅ BaseService loaded');
+console.log('✅ BaseService loaded (object literal)');

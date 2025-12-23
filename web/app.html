@@ -468,6 +468,51 @@
     #transaction-modal {
       display: none;
     }
+
+    /* Empty State Box */
+    .empty-state-box {
+      background: white;
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      border: 2px dashed #e5e7eb;
+      grid-column: 1 / -1;
+    }
+
+    .empty-state-box .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+    }
+
+    .empty-state-box h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    .empty-state-box p {
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    .btn-init {
+      display: inline-block;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-init:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -546,6 +591,7 @@
   <!-- 8. Pages/Modules -->
   <script src="js/dashboard.js"></script>
   <script src="js/transaction.js"></script>
+  <script src="js/initData.js"></script>
 
   <!-- 9. Main App (HARUS TERAKHIR) -->
   <script src="js/app.js"></script>
