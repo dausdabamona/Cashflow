@@ -241,10 +241,10 @@ const DashboardService = {
    */
   async getLoans() {
     try {
-      const userId = AppStore.getUserId();
+      const userId = BaseService.getUserId();
       if (!userId) return [];
 
-      const { data, error } = await window.supabase
+      const { data, error } = await BaseService.getClient()
         .from('loans')
         .select('*')
         .eq('user_id', userId)
@@ -253,7 +253,7 @@ const DashboardService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      ErrorHandler.warn('Failed to get loans:', error);
+      ErrorHandler?.warn?.('Failed to get loans:', error) || console.warn('Failed to get loans:', error);
       return [];
     }
   },
@@ -264,10 +264,10 @@ const DashboardService = {
    */
   async getItems() {
     try {
-      const userId = AppStore.getUserId();
+      const userId = BaseService.getUserId();
       if (!userId) return [];
 
-      const { data, error } = await window.supabase
+      const { data, error } = await BaseService.getClient()
         .from('items')
         .select('*')
         .eq('user_id', userId)
@@ -276,7 +276,7 @@ const DashboardService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      ErrorHandler.warn('Failed to get items:', error);
+      ErrorHandler?.warn?.('Failed to get items:', error) || console.warn('Failed to get items:', error);
       return [];
     }
   },

@@ -36,9 +36,11 @@ class TransactionService extends BaseService {
     }
 
     try {
+      // Note: Use simple select to avoid PGRST201 ambiguous relationship error
+      // transactions has 2 FKs to accounts (account_id and to_account_id)
       let query = this.getClient()
         .from(this.tableName)
-        .select(includeRelations ? '*, accounts(*), categories(*)' : '*')
+        .select(includeRelations ? '*, category:categories(*)' : '*')
         .eq('user_id', this.getUserId())
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
@@ -341,8 +343,8 @@ class TransactionService extends BaseService {
     const byCategory = {};
     expenseTransactions.forEach(tx => {
       const categoryId = tx.category_id || 'uncategorized';
-      const categoryName = tx.categories?.name || 'Tidak Berkategori';
-      const categoryIcon = tx.categories?.icon || '📦';
+      const categoryName = tx.category?.name || 'Tidak Berkategori';
+      const categoryIcon = tx.category?.icon || '📦';
 
       if (!byCategory[categoryId]) {
         byCategory[categoryId] = {
@@ -404,7 +406,7 @@ class TransactionService extends BaseService {
     try {
       const { data, error } = await this.getClient()
         .from(this.tableName)
-        .select('*, accounts(*), categories(*)')
+        .select('*, category:categories(*)')
         .eq('user_id', this.getUserId())
         .ilike('description', `%${query}%`)
         .order('date', { ascending: false })
