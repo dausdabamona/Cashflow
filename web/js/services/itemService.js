@@ -1,88 +1,93 @@
+/**
+ * Item Service
+ * @type {Object}
+ */
 var ItemService = {
-  tableName: 'items',
-  
-  getAll: async function() {
-    try {
+
+  getAll: function() {
+    return new Promise(function(resolve) {
       var userId = BaseService.getUserId();
-      if (!userId) return [];
-      
-      var result = await BaseService.getClient()
+      var client = BaseService.getClient();
+
+      if (!client || !userId) {
+        resolve([]);
+        return;
+      }
+
+      client
         .from('items')
         .select('*')
         .eq('user_id', userId)
-        .order('acquired_date', { ascending: false });
-      
-      if (result.error) throw result.error;
-      return result.data || [];
-    } catch (error) {
-      console.error('[ItemService.getAll]', error);
-      return [];
-    }
+        .order('name', { ascending: true })
+        .then(function(response) {
+          resolve(response.error ? [] : (response.data || []));
+        })
+        .catch(function() {
+          resolve([]);
+        });
+    });
   },
-  
-  getActive: async function() {
-    try {
+
+  getActive: function() {
+    return new Promise(function(resolve) {
       var userId = BaseService.getUserId();
-      if (!userId) return [];
-      
-      var result = await BaseService.getClient()
+      var client = BaseService.getClient();
+
+      if (!client || !userId) {
+        resolve([]);
+        return;
+      }
+
+      client
         .from('items')
         .select('*')
         .eq('user_id', userId)
         .eq('is_sold', false)
-        .order('name', { ascending: true });
-      
-      if (result.error) throw result.error;
-      return result.data || [];
-    } catch (error) {
-      console.error('[ItemService.getActive]', error);
-      return [];
-    }
+        .order('name', { ascending: true })
+        .then(function(response) {
+          resolve(response.error ? [] : (response.data || []));
+        })
+        .catch(function() {
+          resolve([]);
+        });
+    });
   },
-  
-  getById: async function(id) {
-    try {
-      var result = await BaseService.getClient()
-        .from('items')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (result.error) throw result.error;
-      return result.data;
-    } catch (error) {
-      console.error('[ItemService.getById]', error);
-      return null;
-    }
-  },
-  
-  create: async function(itemData) {
-    try {
+
+  create: function(data) {
+    return new Promise(function(resolve) {
       var userId = BaseService.getUserId();
-      var result = await BaseService.getClient()
+      var client = BaseService.getClient();
+
+      if (!client || !userId) {
+        resolve(null);
+        return;
+      }
+
+      client
         .from('items')
         .insert({
           user_id: userId,
-          name: itemData.name,
-          type: itemData.type || 'neutral',
-          description: itemData.description || null,
-          acquired_date: itemData.acquired_date || BaseService.getToday(),
-          acquired_via: itemData.acquired_via || 'purchase',
-          purchase_value: itemData.purchase_value || 0,
-          current_value: itemData.current_value || itemData.purchase_value || 0,
+          name: data.name,
+          type: data.type || 'neutral',
+          description: data.description || null,
+          acquired_date: data.acquired_date || BaseService.getToday(),
+          acquired_via: data.acquired_via || 'purchase',
+          purchase_value: data.purchase_value || 0,
+          current_value: data.current_value || data.purchase_value || 0,
           is_sold: false
         })
         .select()
-        .single();
-      
-      if (result.error) throw result.error;
-      return result.data;
-    } catch (error) {
-      console.error('[ItemService.create]', error);
-      return null;
-    }
+        .single()
+        .then(function(response) {
+          resolve(response.error ? null : response.data);
+        })
+        .catch(function() {
+          resolve(null);
+        });
+    });
   }
 };
 
+// Export to window
 window.ItemService = ItemService;
-console.log('✅ ItemService loaded (object literal)');
+console.log('✅ ItemService loaded successfully');
