@@ -105,7 +105,16 @@ const Dashboard = {
                 <p class="account-balance">${Formatter.currency(acc.current_balance)}</p>
               </div>
             </div>
-          `).join('') : '<p class="empty-state">Belum ada akun</p>'}
+          `).join('') : `
+            <div class="empty-state-box">
+              <div class="empty-icon">📊</div>
+              <h3>Belum ada data</h3>
+              <p>Mulai dengan membuat akun dan kategori default</p>
+              <button onclick="initializeDefaultData()" class="btn-init">
+                🚀 Buat Data Default
+              </button>
+            </div>
+          `}
         </div>
       </div>
 
