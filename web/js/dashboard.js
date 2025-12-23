@@ -127,6 +127,19 @@ const Dashboard = {
           `).join('') : '<p class="empty-state">Belum ada transaksi</p>'}
         </div>
       </div>
+
+      <!-- Floating Action Buttons -->
+      <div class="fab-container">
+        <button class="fab fab-income" onclick="Transaction.showIncomeForm()" title="Tambah Pemasukan">
+          <span>💵</span>
+        </button>
+        <button class="fab fab-expense" onclick="Transaction.showExpenseForm()" title="Tambah Pengeluaran">
+          <span>💸</span>
+        </button>
+        <button class="fab fab-transfer" onclick="Transaction.showTransferForm()" title="Transfer">
+          <span>🔄</span>
+        </button>
+      </div>
     `;
   },
 
